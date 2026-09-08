@@ -1,9 +1,60 @@
 const $=x=>document.getElementById(x);
 let reports=JSON.parse(localStorage.tagelohn||'[]');
+const defaultCustomers=[{id:'dreyer',name:'Dreyer Hochbau GmbH & Co. KG',address:'Mühlenberg 12\n27404 Elsdorf'}];
+let customers=JSON.parse(localStorage.tagelohnCustomers||'null')||defaultCustomers;
 
+function persistCustomers(){localStorage.tagelohnCustomers=JSON.stringify(customers)}
 function show(id){document.querySelectorAll('.screen').forEach(x=>x.classList.remove('active'));$(id).classList.add('active');scrollTo(0,0)}
 function today(){return new Date().toISOString().slice(0,10)}
 function esc(v){return String(v??'').replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;').replaceAll('"','&quot;')}
+
+function renderCustomerSelect(selectedName=''){
+  const s=$('contractorSelect');
+  s.innerHTML='<option value="">— Kunde auswählen —</option>'+customers.map(c=>`<option value="${esc(c.id)}">${esc(c.name)}</option>`).join('')+'<option value="__manual__">Manuell / anderer Auftraggeber</option>';
+  const match=customers.find(c=>c.name===selectedName);
+  s.value=match?match.id:(selectedName?'__manual__':'');
+}
+function customerChanged(){
+  const id=$('contractorSelect').value;
+  if(!id)return;
+  if(id==='__manual__'){
+    const current=$('contractorSelect').dataset.manualName||'';
+    $('contractorSelect').dataset.manualName=current;
+    return;
+  }
+  const c=customers.find(x=>x.id===id); if(!c)return;
+  $('contractorSelect').dataset.manualName=c.name;
+  $('address').value=c.address;
+}
+function contractorName(){
+  const id=$('contractorSelect').value;
+  if(id==='__manual__')return $('contractorSelect').dataset.manualName||'';
+  const c=customers.find(x=>x.id===id); return c?.name||'';
+}
+function openCustomers(){renderCustomers();show('customers')}
+function renderCustomers(){
+  const l=$('customerList');
+  l.innerHTML='';
+  if(!customers.length){l.innerHTML='<div class="panel">Noch keine Kunden angelegt.</div>';return}
+  customers.forEach(c=>{
+    const d=document.createElement('div');d.className='archive';
+    d.innerHTML=`<b>${esc(c.name)}</b><small>${esc(c.address).replaceAll('\n','<br>')}</small><button class="del customerDel">Löschen</button>`;
+    d.querySelector('.customerDel').onclick=()=>{if(confirm('Kunden wirklich löschen?')){customers=customers.filter(x=>x.id!==c.id);persistCustomers();renderCustomers();renderCustomerSelect($('contractorSelect').dataset.manualName||'')}};
+    l.append(d);
+  });
+}
+function addCustomer(){
+  const name=$('customerName').value.trim(),address=$('customerAddress').value.trim();
+  if(!name||!address){alert('Bitte Kundenname und Anschrift eingeben.');return}
+  const existing=customers.find(c=>c.name.toLowerCase()===name.toLowerCase());
+  if(existing){existing.address=address}else customers.push({id:'c_'+Date.now(),name,address});
+  persistCustomers();
+  $('customerName').value='';$('customerAddress').value='';
+  renderCustomers();renderCustomerSelect(name);
+  $('contractorSelect').dataset.manualName=name;
+  $('address').value=address;
+  alert('Kunde gespeichert.');
+}
 
 function addEmp(e={}){
   let d=document.createElement('div'); d.className='employee';
@@ -18,8 +69,9 @@ function item(id,v=''){let d=document.createElement('div');d.className='item';d.
 function clearSignature(){ctx.clearRect(0,0,c.width,c.height)}
 function fill(r){
   $('date').value=r.date||today();
-  $('contractor').value=r.contractor||'Dreyer Hochbau GmbH & Co. KG';
-  $('address').value=r.address||'Mühlenberg 12\n2404 Elsdorf';
+  renderCustomerSelect(r.contractor||'Dreyer Hochbau GmbH & Co. KG');
+  $('contractorSelect').dataset.manualName=r.contractor||'';
+  $('address').value=r.address||'Mühlenberg 12\n27404 Elsdorf';
   $('project').value=r.project||'Rohrleitungsarbeiten Betriebsgelände Elsdorf';
   $('client').value=r.client||'';
   $('employees').innerHTML='';(r.employees||[]).forEach(addEmp);
@@ -28,7 +80,7 @@ function fill(r){
   clearSignature();
   if(r.signature){let img=new Image();img.onload=()=>ctx.drawImage(img,0,0,c.width,c.height);img.src=r.signature;}
 }
-function collect(){return{date:$('date').value,contractor:$('contractor').value,address:$('address').value,project:$('project').value,client:$('client').value,employees:[...document.querySelectorAll('.employee')].map(d=>({hours:+d.querySelector('.hours').value||0,activity:d.querySelector('.activity').value,name:d.querySelector('.name').value,start:d.querySelector('.start').value,end:d.querySelector('.end').value,pause:+d.querySelector('.pause').value||0})),works:[...document.querySelectorAll('#works input')].map(x=>x.value).filter(Boolean),materials:[...document.querySelectorAll('#materials input')].map(x=>x.value).filter(Boolean),signature:$('sig').toDataURL()}}
+function collect(){return{date:$('date').value,contractor:contractorName(),address:$('address').value,project:$('project').value,client:$('client').value,employees:[...document.querySelectorAll('.employee')].map(d=>({hours:+d.querySelector('.hours').value||0,activity:d.querySelector('.activity').value,name:d.querySelector('.name').value,start:d.querySelector('.start').value,end:d.querySelector('.end').value,pause:+d.querySelector('.pause').value||0})),works:[...document.querySelectorAll('#works input')].map(x=>x.value).filter(Boolean),materials:[...document.querySelectorAll('#materials input')].map(x=>x.value).filter(Boolean),signature:$('sig').toDataURL()}}
 function save(){localStorage.tagelohn=JSON.stringify(reports);$('count').textContent=reports.length+' Nachweis'+(reports.length==1?'':'e')}
 function render(){let l=$('list');l.innerHTML=reports.length?'':'<div class="panel">Noch keine Nachweise gespeichert.</div>';reports.forEach((r,i)=>{let d=document.createElement('div');d.className='archive';d.innerHTML=`<b>${esc(formatDate(r.date))}</b><br>${esc(r.project)}<small>${esc(r.contractor)}</small><br><button>Öffnen</button>`;d.querySelector('button').onclick=()=>{fill(r);show('editor')};l.append(d)})}
 
@@ -36,110 +88,41 @@ function formatDate(iso){if(!iso)return '';let d=new Date(iso+'T12:00:00');retur
 function shortDate(iso){if(!iso)return '';let d=new Date(iso+'T12:00:00');return `${String(d.getDate()).padStart(2,'0')}.${String(d.getMonth()+1).padStart(2,'0')}.${d.getFullYear()}`}
 
 function splitLines(text){return String(text||'').split(/\r?\n/).map(s=>s.trim()).filter(Boolean)}
-function drawText(page,font,text,x,y,size=10,bold=false){page.drawText(String(text||''),{x,y,size,font})}
 function fitText(font,text,maxWidth,startSize=10,minSize=7){let size=startSize;while(size>minSize && font.widthOfTextAtSize(text,size)>maxWidth)size-=.25;return size}
-function white(page,x,y,w,h){page.drawRectangle({x,y,width:w,height:h,color:PDFLib.rgb(1,1,1)})}
-function drawWrapped(page,font,text,x,y,maxWidth,size=9,lineGap=2,maxLines=8){
-  let words=String(text||'').split(/\s+/).filter(Boolean), line='', lines=[];
-  for(const word of words){let test=line?line+' '+word:word;if(font.widthOfTextAtSize(test,size)<=maxWidth)line=test;else{if(line)lines.push(line);line=word}}
-  if(line)lines.push(line);lines=lines.slice(0,maxLines);
-  lines.forEach((ln,i)=>page.drawText(ln,{x,y:y-i*(size+lineGap),size,font}));
-}
+function drawWrapped(page,font,text,x,y,maxWidth,size=9,lineGap=2,maxLines=8){let words=String(text||'').split(/\s+/).filter(Boolean),line='',lines=[];for(const word of words){let test=line?line+' '+word:word;if(font.widthOfTextAtSize(test,size)<=maxWidth)line=test;else{if(line)lines.push(line);line=word}}if(line)lines.push(line);lines=lines.slice(0,maxLines);lines.forEach((ln,i)=>page.drawText(ln,{x,y:y-i*(size+lineGap),size,font}));}
 
 async function createPdf(){
-  const data=collect();
-  if(!window.PDFLib){alert('PDF-Bibliothek konnte nicht geladen werden. Bitte Internetverbindung prüfen.');return}
+  const data=collect(); if(!window.PDFLib){alert('PDF-Bibliothek konnte nicht geladen werden. Bitte Internetverbindung prüfen.');return}
   const btn=$('pdf');btn.disabled=true;btn.textContent='PDF wird erstellt …';
   try{
     const {PDFDocument,StandardFonts,rgb}=PDFLib;
     const bytes=await fetch('OriginalTemplate.pdf',{cache:'no-store'}).then(r=>{if(!r.ok)throw new Error('Vorlage nicht gefunden');return r.arrayBuffer()});
-    const pdf=await PDFDocument.load(bytes);
-    const page=pdf.getPages()[0];
-    const W=page.getWidth(),H=page.getHeight();
-    const normal=await pdf.embedFont(StandardFonts.Helvetica);
-    const bold=await pdf.embedFont(StandardFonts.HelveticaBold);
-
-    // The uploaded blank original is used as the untouched background.
-    // Only existing variable text is covered; table borders and all lines remain untouched.
-    function cover(x,yTop,w,h){
-      page.drawRectangle({x,y:H-yTop-h,width:w,height:h,color:rgb(1,1,1)});
-    }
-
-    // Date, contractor and address are printed in the original text positions.
-    cover(225,94,165,18);
-    cover(50,140,220,22);
-    cover(50,165,150,40);
-
-    const dateText=formatDate(data.date);
-    const dateSize=fitText(normal,dateText,145,9.5,7.5);
-    page.drawText(dateText,{
-      x:(W-normal.widthOfTextAtSize(dateText,dateSize))/2,
-      y:H-108,
-      size:dateSize,
-      font:normal
-    });
-
-    if(data.contractor) page.drawText(data.contractor,{x:54,y:H-158,size:11,font:bold});
-    const addr=splitLines(data.address);
-    addr.slice(0,2).forEach((ln,i)=>page.drawText(ln,{x:54,y:H-(180+i*20),size:9.5,font:normal}));
-
-    // Project field: the label and its surrounding border remain original.
-    cover(180,241,375,24);
-    drawWrapped(page,normal,data.project||'',198,H-263,350,9.5,1,2);
-
-    // Employee rows: these are placed inside the empty original table.
-    const rowTop=H-320;
-    const rowStep=20;
-    data.employees.slice(0,12).forEach((e,i)=>{
-      const y=rowTop-i*rowStep;
-      const hours=(Number(e.hours)||0).toFixed(2).replace('.',',');
-      if(hours!=='0,00') page.drawText(hours,{x:84,y,size:9.5,font:normal});
-      if(e.activity) drawWrapped(page,normal,e.activity,145,y,92,9.2,1,2);
-      if(e.name) page.drawText(e.name,{x:247,y,size:9.5,font:normal});
-      if(e.start) page.drawText(e.start,{x:412,y,size:9.5,font:normal});
-      if(e.end) page.drawText(e.end,{x:466,y,size:9.5,font:normal});
-      if(Number(e.pause)) page.drawText(String(e.pause),{x:517,y,size:9.5,font:normal});
-    });
-
-    // Work/material text is placed below the original headings without touching borders.
-    const contentTop=H-565;
-    data.works.slice(0,12).forEach((v,i)=>{
-      drawWrapped(page,normal,'• '+v,54,contentTop-i*14,285,9.2,1,2);
-    });
-    data.materials.slice(0,12).forEach((v,i)=>{
-      drawWrapped(page,normal,'• '+v,355,contentTop-i*14,195,9.2,1,2);
-    });
-
-    // Signature is drawn above the original signature line.
-    if(data.signature && data.signature.length>100){
-      const sigPng=await pdf.embedPng(data.signature);
-      page.drawImage(sigPng,{x:54,y:70,width:190,height:70,opacity:1});
-    }
-
-    const out=await pdf.save();
-    const blob=new Blob([out],{type:'application/pdf'});
-    const url=URL.createObjectURL(blob);
-    const a=document.createElement('a');
-    a.href=url;a.target='_blank';a.rel='noopener';a.click();
-    setTimeout(()=>URL.revokeObjectURL(url),60000);
-  }catch(err){
-    console.error(err);
-    alert('PDF konnte nicht erstellt werden: '+err.message);
-  }finally{
-    btn.disabled=false;btn.textContent='PDF erstellen';
-  }
+    const pdf=await PDFDocument.load(bytes); const page=pdf.getPages()[0]; const W=page.getWidth(),H=page.getHeight();
+    const normal=await pdf.embedFont(StandardFonts.Helvetica),bold=await pdf.embedFont(StandardFonts.HelveticaBold);
+    function cover(x,yTop,w,h){page.drawRectangle({x,y:H-yTop-h,width:w,height:h,color:rgb(1,1,1)})}
+    cover(225,94,165,18);cover(50,140,220,22);cover(50,165,150,40);
+    const dateText=formatDate(data.date),dateSize=fitText(normal,dateText,145,9.5,7.5);
+    page.drawText(dateText,{x:(W-normal.widthOfTextAtSize(dateText,dateSize))/2,y:H-108,size:dateSize,font:normal});
+    if(data.contractor)page.drawText(data.contractor,{x:54,y:H-158,size:11,font:bold});
+    splitLines(data.address).slice(0,2).forEach((ln,i)=>page.drawText(ln,{x:54,y:H-(180+i*20),size:9.5,font:normal}));
+    cover(180,241,375,24);drawWrapped(page,normal,data.project||'',198,H-263,350,9.5,1,2);
+    const rowTop=H-320,rowStep=20;
+    data.employees.slice(0,12).forEach((e,i)=>{const y=rowTop-i*rowStep,hours=(Number(e.hours)||0).toFixed(2).replace('.',',');if(hours!=='0,00')page.drawText(hours,{x:84,y,size:9.5,font:normal});if(e.activity)drawWrapped(page,normal,e.activity,145,y,92,9.2,1,2);if(e.name)page.drawText(e.name,{x:247,y,size:9.5,font:normal});if(e.start)page.drawText(e.start,{x:412,y,size:9.5,font:normal});if(e.end)page.drawText(e.end,{x:466,y,size:9.5,font:normal});if(Number(e.pause))page.drawText(String(e.pause),{x:517,y,size:9.5,font:normal})});
+    const contentTop=H-565;data.works.slice(0,12).forEach((v,i)=>drawWrapped(page,normal,'• '+v,54,contentTop-i*14,285,9.2,1,2));data.materials.slice(0,12).forEach((v,i)=>drawWrapped(page,normal,'• '+v,355,contentTop-i*14,195,9.2,1,2));
+    if(data.signature&&data.signature.length>100){const sigPng=await pdf.embedPng(data.signature);page.drawImage(sigPng,{x:54,y:70,width:190,height:70,opacity:1})}
+    const out=await pdf.save(),blob=new Blob([out],{type:'application/pdf'}),url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.target='_blank';a.rel='noopener';a.click();setTimeout(()=>URL.revokeObjectURL(url),60000);
+  }catch(err){console.error(err);alert('PDF konnte nicht erstellt werden: '+err.message)}finally{btn.disabled=false;btn.textContent='PDF erstellen'}
 }
 
 $('new').onclick=$('new2').onclick=()=>{fill({});show('editor')};
 $('addEmp').onclick=()=>addEmp();$('addWork').onclick=()=>item('works');$('addMat').onclick=()=>item('materials');
-$('archiveBtn').onclick=()=>{render();show('archive')};$('homeBtn').onclick=()=>show('home');
-$('save').onclick=()=>{reports.unshift(collect());save();render();show('archive')};
-$('pdf').onclick=createPdf;
-document.querySelectorAll('nav button').forEach(b=>b.onclick=()=>show(b.dataset.s));save();
+$('archiveBtn').onclick=()=>{render();show('archive')};$('homeBtn').onclick=()=>show('home');$('customersBtn').onclick=openCustomers;$('homeFromCustomers').onclick=()=>show('home');
+$('manageCustomers').onclick=openCustomers;$('addCustomer').onclick=addCustomer;$('contractorSelect').onchange=customerChanged;
+$('save').onclick=()=>{reports.unshift(collect());save();render();show('archive')};$('pdf').onclick=createPdf;
+document.querySelectorAll('nav button').forEach(b=>b.onclick=()=>show(b.dataset.s));
+persistCustomers();renderCustomerSelect('');save();
 
 let c=$('sig'),ctx=c.getContext('2d'),down=false;
-c.onpointerdown=e=>{down=true;ctx.beginPath();let p=pos(e);ctx.moveTo(p.x,p.y)};
-c.onpointermove=e=>{if(!down)return;let p=pos(e);ctx.lineTo(p.x,p.y);ctx.stroke()};
-window.onpointerup=()=>down=false;
+c.onpointerdown=e=>{down=true;ctx.beginPath();let p=pos(e);ctx.moveTo(p.x,p.y)};c.onpointermove=e=>{if(!down)return;let p=pos(e);ctx.lineTo(p.x,p.y);ctx.stroke()};window.onpointerup=()=>down=false;
 function pos(e){let r=c.getBoundingClientRect();return{x:(e.clientX-r.left)*c.width/r.width,y:(e.clientY-r.top)*c.height/r.height}}
 $('clear').onclick=clearSignature;

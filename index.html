@@ -7,18 +7,32 @@
 <main>
 <section id="home" class="screen active"><button id="new2" class="primary big">＋ Neuer Tagelohnnachweis</button>
 <div class="cards"><button class="card" id="archiveBtn">📄 <span><b>Meine Nachweise</b><small id="count">0 Nachweise</small></span>›</button>
-<button class="card" onclick="alert('Stammdaten können im nächsten Ausbau ergänzt werden.')">🏗️ <span><b>Stammdaten</b><small>Auftraggeber, Baustellen, Mitarbeiter</small></span>›</button></div></section>
+<button class="card" id="customersBtn">👥 <span><b>Kunden</b><small>Kunden anlegen und Adressen verwalten</small></span>›</button></div></section>
+
 <section id="editor" class="screen">
 <div class="steps">1 Kopf · 2 Mitarbeiter · 3 Arbeiten · 4 Unterschrift · 5 PDF</div>
 <div class="panel"><h2>Kopfdaten</h2>
-<label>Datum<input id="date" type="date"></label><label>Auftraggeber<input id="contractor"></label>
-<label>Anschrift<textarea id="address"></textarea></label><label>Bauvorhaben<textarea id="project"></textarea></label></div>
+<label>Datum<input id="date" type="date"></label>
+<label>Auftraggeber<select id="contractorSelect"></select></label>
+<button id="manageCustomers" class="titleBtn">＋ Kunden verwalten</button>
+<label>Anschrift<textarea id="address"></textarea></label>
+<label>Bauvorhaben<textarea id="project"></textarea></label></div>
 <div class="panel"><div class="title"><h2>Mitarbeiter / Leistungen</h2><button id="addEmp">＋ Hinzufügen</button></div><div id="employees"></div></div>
 <div class="panel"><h2>Ausgeführte Arbeiten</h2><div id="works"></div><button id="addWork">＋ Eintrag hinzufügen</button></div>
 <div class="panel"><h2>Material / sonstige Leistungen</h2><div id="materials"></div><button id="addMat">＋ Eintrag hinzufügen</button></div>
 <div class="panel"><h2>Unterschrift Auftraggeber</h2><canvas id="sig" width="900" height="360"></canvas><div class="row"><button id="clear">Unterschrift löschen</button><input id="client" placeholder="Name (optional)"></div></div>
 <div class="actions"><button id="save" class="primary">Nachweis speichern</button><button id="pdf" class="primary">PDF erstellen</button></div>
 </section>
+
+<section id="customers" class="screen">
+<div class="title"><h2>Meine Kunden</h2><button id="homeFromCustomers">Zurück</button></div>
+<div class="panel"><h2>Neuen Kunden anlegen</h2>
+<label>Kundenname<input id="customerName" placeholder="z. B. Muster GmbH"></label>
+<label>Anschrift<textarea id="customerAddress" placeholder="Straße Hausnummer&#10;PLZ Ort"></textarea></label>
+<button id="addCustomer" class="primary">Kunden speichern</button></div>
+<div id="customerList"></div>
+</section>
+
 <section id="archive" class="screen"><div class="title"><h2>Meine Nachweise</h2><button id="homeBtn">Zurück</button></div><div id="list"></div></section>
 </main>
 <nav><button data-s="home">⌂<small>Start</small></button><button data-s="archive">▤<small>Nachweise</small></button><button data-s="editor">＋<small>Neu</small></button></nav>

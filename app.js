@@ -231,8 +231,8 @@ function archiveKey(type,contractor,project=''){
 }
 
 // iPhone-/Touch-freundliches Wischen zum Löschen.
-// Nach links wischen zeigt eine rote Löschen-Schaltfläche. Erst ein Tipp auf
-// diese Schaltfläche löscht den Eintrag/Ordner, damit nichts versehentlich verloren geht.
+// Die rote Löschen-Aktion erscheint ERST nach einem echten Wisch nach links.
+// Es werden keine permanent sichtbaren Löschen-Buttons unter den Einträgen angezeigt.
 function enableSwipeDelete(target,onDelete){
   if(!target)return;
   target.classList.add('swipeTarget');
@@ -240,39 +240,103 @@ function enableSwipeDelete(target,onDelete){
   wrap.className='swipeWrap';
   const content=document.createElement('div');
   content.className='swipeContent';
-  while(target.firstChild)content.append(target.firstChild);
+  while(target.firstChild) content.append(target.firstChild);
   const del=document.createElement('button');
-  del.type='button'; del.className='swipeDelete'; del.textContent='Löschen';
+  del.type='button';
+  del.className='swipeDelete';
+  del.textContent='Löschen';
   del.setAttribute('aria-label','Löschen');
-  wrap.append(content,del); target.append(wrap);
-  let startX=0,startY=0,currentX=0,dragging=false,moved=false;
-  const max=92;
-  const setX=x=>{currentX=Math.max(-max,Math.min(0,x));content.style.transform=`translateX(${currentX}px)`;};
+  wrap.append(content,del);
+  target.append(wrap);
+
+  const max=96;
+  let startX=0,startY=0,currentX=0,dragging=false,horizontal=false,moved=false,suppressClick=false;
+
+  const setX=x=>{
+    currentX=Math.max(-max,Math.min(0,x));
+    content.style.transform=`translate3d(${currentX}px,0,0)`;
+  };
   const close=()=>{setX(0);target.classList.remove('swipeOpen');};
   const open=()=>{setX(-max);target.classList.add('swipeOpen');};
+
+  content.addEventListener('touchstart',e=>{
+    if(!e.touches||!e.touches[0])return;
+    const t=e.touches[0];
+    startX=t.clientX; startY=t.clientY;
+    dragging=true; horizontal=false; moved=false;
+  },{passive:true});
+
+  content.addEventListener('touchmove',e=>{
+    if(!dragging||!e.touches||!e.touches[0])return;
+    const t=e.touches[0];
+    const dx=t.clientX-startX, dy=t.clientY-startY;
+    if(!horizontal){
+      if(Math.abs(dx)<7 && Math.abs(dy)<7)return;
+      if(Math.abs(dy)>Math.abs(dx)+5){dragging=false;return;}
+      horizontal=true;
+    }
+    if(horizontal){
+      e.preventDefault();
+      moved=true;
+      // Beim Wischen wird immer relativ zur aktuellen Startposition gerechnet.
+      const base=target.classList.contains('swipeOpen') ? -max : 0;
+      setX(Math.max(-max,Math.min(0,base+dx)));
+    }
+  },{passive:false});
+
+  const finish=()=>{
+    if(!dragging)return;
+    dragging=false;
+    if(horizontal&&moved){
+      suppressClick=true;
+      if(currentX < -max/2) open(); else close();
+      window.setTimeout(()=>{suppressClick=false;},350);
+    }
+  };
+  content.addEventListener('touchend',finish,{passive:true});
+  content.addEventListener('touchcancel',()=>{dragging=false;if(currentX < -max/2)open();else close();},{passive:true});
+
+  // Desktop: zusätzlich Maus/Pointer unterstützen.
+  let pStartX=0,pStartY=0,pDragging=false,pHorizontal=false,pMoved=false;
   content.addEventListener('pointerdown',e=>{
-    if(e.button!==undefined && e.button!==0)return;
-    startX=e.clientX;startY=e.clientY;currentX=parseFloat((getComputedStyle(content).transform.match(/matrix\([^,]+,\s*(-?[\d.]+)/)||[])[1])||0;
-    dragging=true;moved=false;content.setPointerCapture?.(e.pointerId);
+    if(e.pointerType==='touch')return;
+    if(e.button!==0)return;
+    pStartX=e.clientX;pStartY=e.clientY;pDragging=true;pHorizontal=false;pMoved=false;
+    content.setPointerCapture?.(e.pointerId);
   });
   content.addEventListener('pointermove',e=>{
-    if(!dragging)return;
-    const dx=e.clientX-startX,dy=e.clientY-startY;
-    if(Math.abs(dy)>Math.abs(dx)+8){dragging=false;return;}
-    if(Math.abs(dx)>6)moved=true;
-    const base=currentX;
-    setX(Math.min(0,Math.max(-max,base+dx)));
-    startX=e.clientX;
+    if(!pDragging)return;
+    const dx=e.clientX-pStartX,dy=e.clientY-pStartY;
+    if(!pHorizontal){
+      if(Math.abs(dx)<7&&Math.abs(dy)<7)return;
+      if(Math.abs(dy)>Math.abs(dx)+5){pDragging=false;return;}
+      pHorizontal=true;
+    }
+    if(pHorizontal){pMoved=true;setX(Math.max(-max,Math.min(0,dx)));}
   });
   content.addEventListener('pointerup',e=>{
-    if(!dragging)return; dragging=false;
-    if(moved){ if(currentX < -45) open(); else close(); }
+    if(!pDragging)return;pDragging=false;
+    if(pHorizontal&&pMoved){suppressClick=true;if(currentX<-max/2)open();else close();window.setTimeout(()=>suppressClick=false,350);}
   });
-  content.addEventListener('pointercancel',()=>{dragging=false; if(currentX < -45)open(); else close();});
-  del.onclick=e=>{e.stopPropagation();if(confirm('Wirklich löschen?'))onDelete();else close();};
+
+  content.addEventListener('click',e=>{
+    if(suppressClick){e.preventDefault();e.stopPropagation();suppressClick=false;return;}
+    if(target.classList.contains('swipeOpen') && !e.target.closest('.swipeDelete')){
+      // Ein Tipp auf den Inhalt schließt einen geöffneten Löschbereich.
+      close();
+      e.preventDefault();
+      e.stopPropagation();
+    }
+  },true);
+
+  del.addEventListener('click',e=>{
+    e.stopPropagation();
+    if(confirm('Wirklich löschen?'))onDelete();else close();
+  });
   target._closeSwipe=close;
   return {close};
 }
+
 function removeReport(index){
   if(index<0||index>=reports.length)return;
   reports.splice(index,1);save();render();
@@ -294,22 +358,22 @@ function render(){
   [...groups.entries()].sort((a,b)=>a[0].localeCompare(b[0],'de')).forEach(([contractor,projects])=>{
     const folder=document.createElement('section');folder.className='archiveFolderCard';
     const total=[...projects.values()].reduce((n,a)=>n+a.length,0);
-    const head=document.createElement('button');head.type='button';head.className='archiveFolderHead';
+    const head=document.createElement('div');head.className='archiveFolderHead';head.setAttribute('role','button');head.tabIndex=0;
     const folderStateKey=archiveKey('contractor',contractor);
     const folderIsOpen=getArchiveState()[folderStateKey] !== false;
     head.setAttribute('aria-expanded',String(folderIsOpen));
     head.innerHTML=`<span class="folderIconBig">📁</span><span class="folderTitle"><strong>${esc(contractor)}</strong><small>${total} ${total===1?'Nachweis':'Nachweise'}</small></span><span class="folderArrow">${folderIsOpen?'⌃':'⌄'}</span>`;
     const body=document.createElement('div');body.className='archiveFolderBody';body.hidden=!folderIsOpen;
-    head.onclick=()=>{const isOpen=!body.hidden;const next=!isOpen;body.hidden=!next;head.setAttribute('aria-expanded',String(next));head.querySelector('.folderArrow').textContent=next?'⌃':'⌄';setArchiveState(folderStateKey,next);};
+    head.onclick=()=>{const isOpen=!body.hidden;const next=!isOpen;body.hidden=!next;head.setAttribute('aria-expanded',String(next));head.querySelector('.folderArrow').textContent=next?'⌃':'⌄';setArchiveState(folderStateKey,next);}; head.onkeydown=e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();head.click();}};
     [...projects.entries()].sort((a,b)=>a[0].localeCompare(b[0],'de')).forEach(([project,items])=>{
       const box=document.createElement('section');box.className='projectCard';
-      const ph=document.createElement('button');ph.type='button';ph.className='projectHead';
+      const ph=document.createElement('div');ph.className='projectHead';ph.setAttribute('role','button');ph.tabIndex=0;
       const projectStateKey=archiveKey('project',contractor,project);
       const projectIsOpen=getArchiveState()[projectStateKey] !== false;
       ph.setAttribute('aria-expanded',String(projectIsOpen));
       ph.innerHTML=`<span class="projectIconBig">▣</span><span class="projectTitle"><strong>${esc(project)}</strong><small>${items.length} ${items.length===1?'Nachweis':'Nachweise'}</small></span><span class="projectArrow">${projectIsOpen?'⌃':'⌄'}</span>`;
       const pb=document.createElement('div');pb.className='projectBody';pb.hidden=!projectIsOpen;
-      ph.onclick=()=>{const isOpen=!pb.hidden;const next=!isOpen;pb.hidden=!next;ph.setAttribute('aria-expanded',String(next));ph.querySelector('.projectArrow').textContent=next?'⌃':'⌄';setArchiveState(projectStateKey,next);};
+      ph.onclick=()=>{const isOpen=!pb.hidden;const next=!isOpen;pb.hidden=!next;ph.setAttribute('aria-expanded',String(next));ph.querySelector('.projectArrow').textContent=next?'⌃':'⌄';setArchiveState(projectStateKey,next);}; ph.onkeydown=e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();ph.click();}};
       items.sort((a,b)=>String(b.r.date||'').localeCompare(String(a.r.date||''))).forEach(({r,i})=>{
         const row=document.createElement('div');row.className='reportRow';const signed=!!r.signed;
         row.innerHTML=`<div class="reportMain"><strong>${esc(formatDate(r.date)||'Ohne Datum')}</strong><span class="reportStatus ${signed?'isSigned':'isDraft'}">${signed?'✓ Unterschrieben':'Entwurf'}</span></div><button type="button" class="openReport">Öffnen</button>`;

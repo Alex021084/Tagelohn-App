@@ -2,7 +2,7 @@
 <html lang="de"><head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#0a84ff"><link rel="manifest" href="manifest.json"><title>Tagelohnnachweis</title>
-<link rel="stylesheet" href="styles.css?v=20260908-2255"></head><body>
+<link rel="stylesheet" href="styles.css"></head><body>
 <header><div><small>Baustelle</small><h1>Tagelohnnachweis</h1></div><button id="new">＋</button></header>
 <main>
 <section id="home" class="screen active"><button id="new2" class="primary big">＋ Neuer Tagelohnnachweis</button>
@@ -13,14 +13,18 @@
 
 <section id="services" class="screen">
 <div class="title"><h2>Leistungen verwalten</h2><button id="homeFromServices">Zurück</button></div>
-<div class="addBar"><input id="serviceName" placeholder="Neue Leistung…" aria-label="Neue Leistung"><button id="addService" class="saveManage" aria-label="Leistung speichern">Speichern</button></div>
-<div class="listPanel"><div class="listHeader"><h2>Vorhandene Leistungen</h2><small>Nach links wischen zum Löschen</small></div><div id="serviceList"></div></div>
+<div class="panel"><h2>Neue Leistung anlegen</h2>
+<label>Bezeichnung<input id="serviceName" placeholder="z. B. Baggerfahrer"></label>
+<button id="addService" class="primary">Leistung hinzufügen</button></div>
+<div class="panel"><h2>Vorhandene Leistungen</h2><div id="serviceList"></div></div>
 </section>
 
 <section id="employeeManager" class="screen">
 <div class="title"><h2>Mitarbeiter verwalten</h2><button id="homeFromEmployees">Zurück</button></div>
-<div class="addBar"><input id="employeeName" placeholder="Neuen Mitarbeiter…" aria-label="Neuer Mitarbeiter"><button id="addEmployee" class="saveManage" aria-label="Mitarbeiter speichern">Speichern</button></div>
-<div class="listPanel"><div class="listHeader"><h2>Vorhandene Mitarbeiter</h2><small>Nach links wischen zum Löschen</small></div><div id="employeeList"></div></div>
+<div class="panel"><h2>Neuen Mitarbeiter anlegen</h2>
+<label>Name des Mitarbeiters<input id="employeeName" placeholder="z. B. Max Mustermann"></label>
+<button id="addEmployee" class="primary">Mitarbeiter hinzufügen</button></div>
+<div class="panel"><h2>Vorhandene Mitarbeiter</h2><div id="employeeList"></div></div>
 </section>
 
 <section id="editor" class="screen">
@@ -69,4 +73,4 @@
 </main>
 <nav><button data-s="home">⌂<small>Start</small></button><button data-s="archive">▤<small>Nachweise</small></button><button data-s="editor">＋<small>Neu</small></button></nav>
 <script src="https://unpkg.com/pdf-lib@1.17.1/dist/pdf-lib.min.js"></script>
-<script src="app.js?v=manage-save-20260908-01"></script></body></html>
+<script src="app.js?v=20260908-swipe-delete"></script></body></html>

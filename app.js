@@ -1,4 +1,3 @@
-// UI-FIX-2026-09-08-NO-DOTS
 const $=x=>document.getElementById(x);
 let reports=JSON.parse(localStorage.tagelohn||'[]');
 let editingReportIndex=null;
@@ -42,22 +41,16 @@ function renderServices(){
   const l=$('serviceList'); l.innerHTML='';
   services.forEach((name,i)=>{
     const d=document.createElement('div'); d.className='serviceRow';
-    d.innerHTML=`<input class="serviceEdit" value="${esc(name)}" aria-label="Leistung bearbeiten">`;
-    const saveValue=()=>{
+    d.innerHTML=`<input class="serviceEdit" value="${esc(name)}"><div class="serviceActions"><button class="serviceSave">Speichern</button><button class="del serviceDel">Löschen</button></div>`;
+    d.querySelector('.serviceSave').onclick=()=>{
       const value=d.querySelector('.serviceEdit').value.trim();
-      if(!value){ d.querySelector('.serviceEdit').value=services[i]||''; return; }
-      if(services.some((s,j)=>j!==i&&s.toLowerCase()===value.toLowerCase())){
-        alert('Diese Leistung gibt es bereits.');
-        d.querySelector('.serviceEdit').value=services[i]||'';
-        return;
-      }
-      services[i]=value; persistServices();
+      if(!value){alert('Bitte eine Bezeichnung eingeben.');return}
+      if(services.some((s,j)=>j!==i&&s.toLowerCase()===value.toLowerCase())){alert('Diese Leistung gibt es bereits.');return}
+      services[i]=value;persistServices();renderServices();
     };
-    d.querySelector('.serviceEdit').addEventListener('change',saveValue);
-    d.querySelector('.serviceEdit').addEventListener('blur',saveValue);
-    enableSwipeDelete(d,()=>{
-      services.splice(i,1); persistServices(); renderServices();
-    });
+    d.querySelector('.serviceDel').onclick=()=>{
+      if(confirm('Leistung wirklich löschen?')){services.splice(i,1);persistServices();renderServices();}
+    };
     l.append(d);
   });
   if(!services.length)l.innerHTML='<div class="empty">Noch keine Leistungen angelegt.</div>';
@@ -126,22 +119,16 @@ function renderEmployees(){
   const l=$('employeeList'); l.innerHTML='';
   employees.forEach((name,i)=>{
     const d=document.createElement('div'); d.className='serviceRow';
-    d.innerHTML=`<input class="employeeEdit" value="${esc(name)}" aria-label="Mitarbeiter bearbeiten">`;
-    const saveValue=()=>{
+    d.innerHTML=`<input class="employeeEdit" value="${esc(name)}"><div class="serviceActions"><button class="employeeSave">Speichern</button><button class="del employeeDel">Löschen</button></div>`;
+    d.querySelector('.employeeSave').onclick=()=>{
       const value=d.querySelector('.employeeEdit').value.trim();
-      if(!value){ d.querySelector('.employeeEdit').value=employees[i]||''; return; }
-      if(employees.some((e,j)=>j!==i&&e.toLowerCase()===value.toLowerCase())){
-        alert('Diesen Mitarbeiter gibt es bereits.');
-        d.querySelector('.employeeEdit').value=employees[i]||'';
-        return;
-      }
-      employees[i]=value; persistEmployees();
+      if(!value){alert('Bitte einen Namen eingeben.');return}
+      if(employees.some((e,j)=>j!==i&&e.toLowerCase()===value.toLowerCase())){alert('Diesen Mitarbeiter gibt es bereits.');return}
+      employees[i]=value;persistEmployees();renderEmployees();
     };
-    d.querySelector('.employeeEdit').addEventListener('change',saveValue);
-    d.querySelector('.employeeEdit').addEventListener('blur',saveValue);
-    enableSwipeDelete(d,()=>{
-      employees.splice(i,1); persistEmployees(); renderEmployees();
-    });
+    d.querySelector('.employeeDel').onclick=()=>{
+      if(confirm('Mitarbeiter wirklich löschen?')){employees.splice(i,1);persistEmployees();renderEmployees();}
+    };
     l.append(d);
   });
   if(!employees.length)l.innerHTML='<div class="empty">Noch keine Mitarbeiter angelegt.</div>';
@@ -246,112 +233,96 @@ function archiveKey(type,contractor,project=''){
 // iPhone-/Touch-freundliches Wischen zum Löschen.
 // Die rote Löschen-Aktion erscheint ERST nach einem echten Wisch nach links.
 // Es werden keine permanent sichtbaren Löschen-Buttons unter den Einträgen angezeigt.
-let activeSwipeTarget=null;
-function closeActiveSwipe(){
-  if(activeSwipeTarget && activeSwipeTarget._closeSwipe) activeSwipeTarget._closeSwipe();
-  activeSwipeTarget=null;
-}
-
-// Robuste iPhone-/iPad-Wischfunktion. Der rote Button existiert im DOM,
-// ist aber inline vollständig verborgen und wird erst nach einem echten
-// horizontalen Wisch eingeblendet.
 function enableSwipeDelete(target,onDelete){
-  if(!target) return;
+  if(!target)return;
   target.classList.add('swipeTarget');
   const wrap=document.createElement('div');
   wrap.className='swipeWrap';
   const content=document.createElement('div');
   content.className='swipeContent';
   while(target.firstChild) content.append(target.firstChild);
-
   const del=document.createElement('button');
   del.type='button';
   del.className='swipeDelete';
   del.innerHTML=`<span class="swipeDeleteIcon" aria-hidden="true">×</span>`;
   del.setAttribute('aria-label','Löschen');
-  del.style.display='none';
-
   wrap.append(content,del);
   target.append(wrap);
 
-  const max=72;
+  const max=96;
   let startX=0,startY=0,currentX=0,dragging=false,horizontal=false,moved=false,suppressClick=false;
+
   const setX=x=>{
     currentX=Math.max(-max,Math.min(0,x));
     content.style.transform=`translate3d(${currentX}px,0,0)`;
   };
-  const close=()=>{
-    content.style.transition='transform .20s ease';
-    setX(0);
-    target.classList.remove('swipeOpen');
-    del.style.display='none';
-    setTimeout(()=>{content.style.transition='';},220);
-    if(activeSwipeTarget===target) activeSwipeTarget=null;
-  };
-  const open=()=>{
-    if(activeSwipeTarget && activeSwipeTarget!==target) activeSwipeTarget._closeSwipe?.();
-    activeSwipeTarget=target;
-    content.style.transition='transform .20s ease';
-    setX(-max);
-    target.classList.add('swipeOpen');
-    del.style.display='flex';
-    setTimeout(()=>{content.style.transition='';},220);
-  };
+  const close=()=>{setX(0);target.classList.remove('swipeOpen');};
+  const open=()=>{setX(-max);target.classList.add('swipeOpen');};
 
-  content.addEventListener('pointerdown',e=>{
-    if(e.pointerType==='mouse' && e.button!==0) return;
-    startX=e.clientX; startY=e.clientY;
+  content.addEventListener('touchstart',e=>{
+    if(!e.touches||!e.touches[0])return;
+    const t=e.touches[0];
+    startX=t.clientX; startY=t.clientY;
     dragging=true; horizontal=false; moved=false;
-    content.style.transition='none';
-    try{content.setPointerCapture(e.pointerId);}catch(_){ }
-  });
+  },{passive:true});
 
-  content.addEventListener('pointermove',e=>{
-    if(!dragging) return;
-    const dx=e.clientX-startX, dy=e.clientY-startY;
+  content.addEventListener('touchmove',e=>{
+    if(!dragging||!e.touches||!e.touches[0])return;
+    const t=e.touches[0];
+    const dx=t.clientX-startX, dy=t.clientY-startY;
     if(!horizontal){
-      if(Math.abs(dx)<8 && Math.abs(dy)<8) return;
-      if(Math.abs(dy)>Math.abs(dx)){
-        dragging=false; content.style.transition=''; return;
-      }
+      if(Math.abs(dx)<7 && Math.abs(dy)<7)return;
+      if(Math.abs(dy)>Math.abs(dx)+5){dragging=false;return;}
       horizontal=true;
     }
-    if(!horizontal) return;
-    moved=true;
-    e.preventDefault();
-    const base=target.classList.contains('swipeOpen') ? -max : 0;
-    setX(base+dx);
-  });
+    if(horizontal){
+      e.preventDefault();
+      moved=true;
+      // Beim Wischen wird immer relativ zur aktuellen Startposition gerechnet.
+      const base=target.classList.contains('swipeOpen') ? -max : 0;
+      setX(Math.max(-max,Math.min(0,base+dx)));
+    }
+  },{passive:false});
 
-  const finish=e=>{
-    if(!dragging) return;
+  const finish=()=>{
+    if(!dragging)return;
     dragging=false;
-    try{content.releasePointerCapture?.(e.pointerId);}catch(_){ }
-    content.style.transition='';
-    if(horizontal && moved){
+    if(horizontal&&moved){
       suppressClick=true;
-      const dx=e.clientX-startX;
-      const opened=target.classList.contains('swipeOpen');
-      if((!opened && dx < -40) || (opened && dx > 40)){
-        if(opened) close(); else open();
-      }else if(!opened){
-        close();
-      }else{
-        setX(-max); del.style.display='flex';
-      }
-      setTimeout(()=>{suppressClick=false;},300);
+      if(currentX < -max/2) open(); else close();
+      window.setTimeout(()=>{suppressClick=false;},350);
     }
   };
-  content.addEventListener('pointerup',finish);
-  content.addEventListener('pointercancel',e=>{
-    if(dragging){dragging=false;content.style.transition='';}
-    if(!target.classList.contains('swipeOpen')) close();
+  content.addEventListener('touchend',finish,{passive:true});
+  content.addEventListener('touchcancel',()=>{dragging=false;if(currentX < -max/2)open();else close();},{passive:true});
+
+  // Desktop: zusätzlich Maus/Pointer unterstützen.
+  let pStartX=0,pStartY=0,pDragging=false,pHorizontal=false,pMoved=false;
+  content.addEventListener('pointerdown',e=>{
+    if(e.pointerType==='touch')return;
+    if(e.button!==0)return;
+    pStartX=e.clientX;pStartY=e.clientY;pDragging=true;pHorizontal=false;pMoved=false;
+    content.setPointerCapture?.(e.pointerId);
+  });
+  content.addEventListener('pointermove',e=>{
+    if(!pDragging)return;
+    const dx=e.clientX-pStartX,dy=e.clientY-pStartY;
+    if(!pHorizontal){
+      if(Math.abs(dx)<7&&Math.abs(dy)<7)return;
+      if(Math.abs(dy)>Math.abs(dx)+5){pDragging=false;return;}
+      pHorizontal=true;
+    }
+    if(pHorizontal){pMoved=true;setX(Math.max(-max,Math.min(0,dx)));}
+  });
+  content.addEventListener('pointerup',e=>{
+    if(!pDragging)return;pDragging=false;
+    if(pHorizontal&&pMoved){suppressClick=true;if(currentX<-max/2)open();else close();window.setTimeout(()=>suppressClick=false,350);}
   });
 
-  // Wenn ein geöffneter Eintrag normal angetippt wird, wieder schließen.
   content.addEventListener('click',e=>{
-    if(suppressClick){e.preventDefault();e.stopPropagation();return;}
-    if(target.classList.contains('swipeOpen')){
+    if(suppressClick){e.preventDefault();e.stopPropagation();suppressClick=false;return;}
+    if(target.classList.contains('swipeOpen') && !e.target.closest('.swipeDelete')){
+      // Ein Tipp auf den Inhalt schließt einen geöffneten Löschbereich.
       close();
       e.preventDefault();
       e.stopPropagation();
@@ -359,23 +330,12 @@ function enableSwipeDelete(target,onDelete){
   },true);
 
   del.addEventListener('click',e=>{
-    e.preventDefault(); e.stopPropagation();
-    if(confirm('Wirklich löschen?')) onDelete(); else close();
+    e.stopPropagation();
+    if(confirm('Wirklich löschen?'))onDelete();else close();
   });
-
   target._closeSwipe=close;
   return {close};
 }
-
-document.addEventListener('pointerdown',e=>{
-  if(!activeSwipeTarget) return;
-  if(!activeSwipeTarget.contains(e.target)) closeActiveSwipe();
-});
-
-document.addEventListener('click',e=>{
-  if(!activeSwipeTarget) return;
-  if(!activeSwipeTarget.contains(e.target)) closeActiveSwipe();
-});
 
 function removeReport(index){
   if(index<0||index>=reports.length)return;

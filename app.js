@@ -64,10 +64,8 @@ async function createPdf(){
     white(page,48, H-163, 220, 26);                         // contractor
     white(page,48, H-204, 150, 48);                         // address
     white(page,185, H-269, 270, 27);                        // project
-    white(page,72, H-408, 486, 105);                        // employee table data rows
-    white(page,38, H-710, 300, 165);                        // works
-    white(page,373, H-710, 171, 165);                       // materials
-    white(page,48, 68, 215, 70);                            // signature/name area above label
+    // The table, work/material boxes, and signature area are intentionally NOT white-covered.
+    // Their borders belong to the original template and must remain completely intact.
 
     // Header values.
     const dateText=formatDate(data.date);

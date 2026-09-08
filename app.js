@@ -101,14 +101,17 @@ function addCustomer(){
 }
 
 function serviceOptions(selected=''){
-  return '<option value="">— Leistung auswählen —</option>'+services.map(s=>`<option value="${esc(s)}"${s===selected?' selected':''}>${esc(s)}</option>`).join('');
+  const current=String(selected||'');
+  const options=services.map(s=>`<option value="${esc(s)}"${s===current?' selected':''}>${esc(s)}</option>`).join('');
+  return '<option value="">— Leistung auswählen —</option>'+options;
 }
 function addEmp(e={}){
-  let d=document.createElement('div'); d.className='employee';
-  d.innerHTML=`<button class="del">Löschen</button><b>Mitarbeiter / Leistung</b>
-  <div class="grid"><label>Stunden<input class="hours" type="number" step=".25" value="${e.hours??0}"></label>
-  <label>Leistung<select class="service">${serviceOptions(e.service||e.activity||'')}</select></label></div>
+  const selectedService=e.service||e.activity||'';
+  const d=document.createElement('div'); d.className='employee';
+  d.innerHTML=`<button type="button" class="del">Löschen</button><b>Mitarbeiter</b>
   <label>Name des Mitarbeiters<input class="name" value="${esc(e.name||'')}"></label>
+  <div class="grid"><label>Leistung<select class="service" aria-label="Leistung für Mitarbeiter auswählen">${serviceOptions(selectedService)}</select></label>
+  <label>Stunden<input class="hours" type="number" step=".25" value="${e.hours??0}"></label></div>
   <div class="grid grid3"><label>Anfang<input class="start" type="time" value="${e.start||''}"></label><label>Ende<input class="end" type="time" value="${e.end||''}"></label><label>Pause<input class="pause" type="number" value="${e.pause??0}"></label></div>`;
   d.querySelector('.del').onclick=()=>d.remove();
   ['start','end','pause'].forEach(c=>d.querySelector('.'+c).oninput=()=>calc(d));

@@ -38,8 +38,12 @@
 <div class="panel"><div class="title"><h2>Mitarbeiter / Leistungen</h2><button id="addEmp">＋ Hinzufügen</button></div><div id="employees"></div></div>
 <div class="panel"><h2>Ausgeführte Arbeiten</h2><div id="works"></div><button id="addWork">＋ Eintrag hinzufügen</button></div>
 <div class="panel"><h2>Material / sonstige Leistungen</h2><div id="materials"></div><button id="addMat">＋ Eintrag hinzufügen</button></div>
-<div class="panel"><h2>Unterschrift Auftraggeber</h2><canvas id="sig" width="900" height="360"></canvas><div class="row"><button id="clear">Unterschrift löschen</button><input id="client" placeholder="Name (optional)"></div></div>
+<div class="panel signaturePanel"><h2>Kunde prüfen und unterschreiben</h2><p class="hint">Zuerst wird dem Kunden eine übersichtliche Zusammenfassung des Tagelohnnachweises angezeigt. Erst danach kann die Unterschrift abgegeben werden.</p><button id="review" class="primary">Zusammenfassung anzeigen</button><div id="signatureStatus" class="signatureStatus">Noch nicht unterschrieben</div></div>
 <div class="actions"><button id="save" class="primary">Nachweis speichern</button><button id="pdf" class="primary">PDF erstellen</button></div>
+
+<div id="reviewModal" class="modal" aria-hidden="true"><div class="modalCard"><div class="modalHead"><div><small>Kundenprüfung</small><h2>Tagelohnnachweis prüfen</h2></div><button id="closeReview" class="modalClose" aria-label="Schließen">×</button></div><div id="summaryContent" class="summaryContent"></div><div class="modalActions"><button id="cancelReview">Zurück</button><button id="signNow" class="primary">Unterschreiben</button></div></div></div>
+
+<div id="signatureModal" class="modal" aria-hidden="true"><div class="modalCard signatureCard"><div class="modalHead"><div><small>Unterschrift Auftraggeber</small><h2>Hier unterschreiben</h2></div><button id="closeSignature" class="modalClose" aria-label="Schließen">×</button></div><p class="hint">Bitte mit Finger, Maus oder Stift im Feld unterschreiben.</p><canvas id="sig" width="900" height="360"></canvas><div class="row"><button id="clear">Unterschrift löschen</button><input id="client" placeholder="Name (optional)"></div><div class="modalActions"><button id="cancelSignature">Abbrechen</button><button id="saveSignature" class="primary">Unterschrift übernehmen</button></div></div></div>
 </section>
 
 <section id="customers" class="screen">
@@ -55,4 +59,4 @@
 </main>
 <nav><button data-s="home">⌂<small>Start</small></button><button data-s="archive">▤<small>Nachweise</small></button><button data-s="editor">＋<small>Neu</small></button></nav>
 <script src="https://unpkg.com/pdf-lib@1.17.1/dist/pdf-lib.min.js"></script>
-<script src="app.js?v=20260908-pdf2"></script></body></html>
+<script src="app.js?v=20260908-signature1"></script></body></html>

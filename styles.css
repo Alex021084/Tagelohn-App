@@ -96,3 +96,12 @@ select{width:100%;margin-top:5px;padding:11px;border:1px solid #d5d5da;border-ra
 .swipeTarget.swipeOpen .swipeContent{box-shadow:0 0 0 1px rgba(255,59,48,.12);}
 .archiveFolderHead,.projectHead{user-select:none;-webkit-user-select:none;-webkit-tap-highlight-color:transparent;}
 @media(max-width:520px){.swipeDelete{width:82px;font-size:14px;}.swipeContent{touch-action:pan-y;}}
+
+
+/* Mitarbeiter und Leistungen: Speichern/Löschen nicht dauerhaft anzeigen. Änderungen werden automatisch gespeichert; Löschen erfolgt per Wischen. */
+.serviceRow{position:relative;overflow:hidden;padding:0;margin:8px 0;border-bottom:0;border-radius:12px;background:#fff;}
+.serviceRow .swipeWrap{border-radius:12px;}
+.serviceRow .swipeContent{background:#fff;padding:0;}
+.serviceRow .serviceEdit,.serviceRow .employeeEdit{width:100%;margin:0;border:1px solid #d5d5da;border-radius:12px;padding:12px;background:#fff;font:inherit;}
+.serviceRow .swipeDelete{width:82px;}
+@media(max-width:520px){.serviceRow{margin:8px 0}.serviceRow .swipeDelete{width:82px;font-size:14px}}

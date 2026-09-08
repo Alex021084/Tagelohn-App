@@ -248,8 +248,10 @@ async function createPdf(options={}){
   const btn=$('pdf');btn.disabled=true;btn.textContent='PDF wird erstellt …';
   let fileHandle=null;
   try{
-    // Den nativen Speichern-Dialog möglichst früh öffnen, solange noch eine direkte
-    // Benutzeraktion vorliegt. Auf unterstützten Browsern kann der Kunde den Speicherort wählen.
+    // Den nativen Speichern-Dialog verwenden, wenn der Browser ihn unterstützt.
+    // Auf iPhone/iPad (Safari) gibt es showSaveFilePicker nicht; dort verwenden wir
+    // anschließend den System-Teilen-Dialog, über den der Benutzer 'In Dateien sichern'
+    // und den Zielordner auswählen kann.
     if(options.askLocation && 'showSaveFilePicker' in window){
       fileHandle=await window.showSaveFilePicker({
         suggestedName:pdfFilename(data),
@@ -278,8 +280,21 @@ async function createPdf(options={}){
       await writable.close();
     }else{
       const blob=new Blob([out],{type:'application/pdf'});
+      const filename=pdfFilename(data);
+      // Auf mobilen Browsern, insbesondere iOS/iPadOS, gibt es keinen universellen
+      // 'Speichern unter'-Dialog für Web-Downloads. Der System-Teilen-Dialog bietet
+      // dort die Möglichkeit, die PDF über 'In Dateien sichern' an einem frei
+      // wählbaren Ort abzulegen.
+      if(options.askLocation && navigator.share && navigator.canShare){
+        const file=new File([blob],filename,{type:'application/pdf'});
+        if(navigator.canShare({files:[file]})){
+          await navigator.share({title:filename,text:'Unterschriebener Tagelohnnachweis',files:[file]});
+          return true;
+        }
+      }
+      // Fallback für Browser ohne Speichern-/Teilen-Dialog.
       const url=URL.createObjectURL(blob);
-      const a=document.createElement('a');a.href=url;a.download=pdfFilename(data);a.style.display='none';document.body.appendChild(a);a.click();a.remove();
+      const a=document.createElement('a');a.href=url;a.download=filename;a.style.display='none';document.body.appendChild(a);a.click();a.remove();
       setTimeout(()=>URL.revokeObjectURL(url),60000);
     }
     return true;

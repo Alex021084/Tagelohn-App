@@ -3,6 +3,7 @@ let reports=JSON.parse(localStorage.tagelohn||'[]');
 const defaultCustomers=[{id:'dreyer',name:'Dreyer Hochbau GmbH & Co. KG',address:'Mühlenberg 12\n27404 Elsdorf'}];
 let customers=JSON.parse(localStorage.tagelohnCustomers||'null')||defaultCustomers;
 let services=JSON.parse(localStorage.tagelohnServices||'null');
+let employees=JSON.parse(localStorage.tagelohnEmployees||'null');
 const defaultServices=[
   'Vorarbeiter',
   'Facharbeiter',
@@ -20,9 +21,20 @@ const defaultServices=[
   'Transporter'
 ];
 if(!Array.isArray(services)||!services.length) services=[...defaultServices];
+const defaultEmployees=[
+  'Alexander Geestmann',
+  'Dennis Dählmann',
+  'Thorsten Dählmann',
+  'Joachim Ziegler',
+  'Kevin Wicke',
+  'Mario Wicke-Porath',
+  'Steven Jansen'
+];
+if(!Array.isArray(employees)||!employees.length) employees=[...defaultEmployees];
 
 function persistCustomers(){localStorage.tagelohnCustomers=JSON.stringify(customers)}
 function persistServices(){localStorage.tagelohnServices=JSON.stringify(services)}
+function persistEmployees(){localStorage.tagelohnEmployees=JSON.stringify(employees)}
 function openServices(){renderServices();show('services')}
 function renderServices(){
   const l=$('serviceList'); l.innerHTML='';
@@ -100,6 +112,38 @@ function addCustomer(){
   alert('Kunde gespeichert.');
 }
 
+
+function openEmployees(){renderEmployees();show('employeeManager')}
+function renderEmployees(){
+  const l=$('employeeList'); l.innerHTML='';
+  employees.forEach((name,i)=>{
+    const d=document.createElement('div'); d.className='serviceRow';
+    d.innerHTML=`<input class="employeeEdit" value="${esc(name)}"><div class="serviceActions"><button class="employeeSave">Speichern</button><button class="del employeeDel">Löschen</button></div>`;
+    d.querySelector('.employeeSave').onclick=()=>{
+      const value=d.querySelector('.employeeEdit').value.trim();
+      if(!value){alert('Bitte einen Namen eingeben.');return}
+      if(employees.some((e,j)=>j!==i&&e.toLowerCase()===value.toLowerCase())){alert('Diesen Mitarbeiter gibt es bereits.');return}
+      employees[i]=value;persistEmployees();renderEmployees();
+    };
+    d.querySelector('.employeeDel').onclick=()=>{
+      if(confirm('Mitarbeiter wirklich löschen?')){employees.splice(i,1);persistEmployees();renderEmployees();}
+    };
+    l.append(d);
+  });
+  if(!employees.length)l.innerHTML='<div class="empty">Noch keine Mitarbeiter angelegt.</div>';
+}
+function addEmployee(){
+  const value=$('employeeName').value.trim();
+  if(!value){alert('Bitte einen Namen eingeben.');return}
+  if(employees.some(e=>e.toLowerCase()===value.toLowerCase())){alert('Diesen Mitarbeiter gibt es bereits.');return}
+  employees.push(value);persistEmployees();$('employeeName').value='';renderEmployees();
+}
+function employeeOptions(selected=''){
+  const current=String(selected||'');
+  const options=employees.map(n=>`<option value="${esc(n)}"${n===current?' selected':''}>${esc(n)}</option>`).join('');
+  return '<option value="">— Mitarbeiter auswählen —</option>'+options;
+}
+
 function serviceOptions(selected=''){
   const current=String(selected||'');
   const options=services.map(s=>`<option value="${esc(s)}"${s===current?' selected':''}>${esc(s)}</option>`).join('');
@@ -109,7 +153,7 @@ function addEmp(e={}){
   const selectedService=e.service||e.activity||'';
   const d=document.createElement('div'); d.className='employee';
   d.innerHTML=`<button type="button" class="del">Löschen</button><b>Mitarbeiter</b>
-  <label>Name des Mitarbeiters<input class="name" value="${esc(e.name||'')}"></label>
+  <label>Name des Mitarbeiters<select class="name" aria-label="Mitarbeiter auswählen">${employeeOptions(e.name||'')}</select></label>
   <div class="grid"><label>Leistung<select class="service" aria-label="Leistung für Mitarbeiter auswählen">${serviceOptions(selectedService)}</select></label>
   <label>Stunden<input class="hours" type="number" step=".25" value="${e.hours??0}"></label></div>
   <div class="grid grid3"><label>Anfang<input class="start" type="time" value="${e.start||''}"></label><label>Ende<input class="end" type="time" value="${e.end||''}"></label><label>Pause<input class="pause" type="number" value="${e.pause??0}"></label></div>`;
@@ -171,10 +215,10 @@ async function createPdf(){
 $('new').onclick=$('new2').onclick=()=>{fill({});show('editor')};
 $('addEmp').onclick=()=>addEmp();$('addWork').onclick=()=>item('works');$('addMat').onclick=()=>item('materials');
 $('archiveBtn').onclick=()=>{render();show('archive')};$('homeBtn').onclick=()=>show('home');$('customersBtn').onclick=openCustomers;$('homeFromCustomers').onclick=()=>show('home');
-$('manageCustomers').onclick=openCustomers;$('addCustomer').onclick=addCustomer;$('contractorSelect').onchange=customerChanged;$('servicesBtn').onclick=openServices;$('homeFromServices').onclick=()=>show('home');$('addService').onclick=addService;
+$('manageCustomers').onclick=openCustomers;$('addCustomer').onclick=addCustomer;$('contractorSelect').onchange=customerChanged;$('servicesBtn').onclick=openServices;$('homeFromServices').onclick=()=>show('home');$('addService').onclick=addService;$('employeesBtn').onclick=openEmployees;$('homeFromEmployees').onclick=()=>show('home');$('addEmployee').onclick=addEmployee;
 $('save').onclick=()=>{reports.unshift(collect());save();render();show('archive')};$('pdf').onclick=createPdf;
 document.querySelectorAll('nav button').forEach(b=>b.onclick=()=>show(b.dataset.s));
-persistCustomers();persistServices();renderCustomerSelect('');save();
+persistCustomers();persistServices();persistEmployees();renderCustomerSelect('');save();
 
 let c=$('sig'),ctx=c.getContext('2d'),down=false;
 c.onpointerdown=e=>{down=true;ctx.beginPath();let p=pos(e);ctx.moveTo(p.x,p.y)};c.onpointermove=e=>{if(!down)return;let p=pos(e);ctx.lineTo(p.x,p.y);ctx.stroke()};window.onpointerup=()=>down=false;

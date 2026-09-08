@@ -217,85 +217,32 @@ function collect(){return{date:$('date').value,contractor:contractorName(),addre
 function save(){localStorage.tagelohn=JSON.stringify(reports);$('count').textContent=reports.length+' Nachweis'+(reports.length==1?'':'e')}
 function render(){
   const l=$('list');
-  if(!reports.length){
-    l.innerHTML='<div class="panel emptyState"><div class="emptyIcon">▤</div><b>Noch keine Nachweise</b><small>Gespeicherte Tagelohnnachweise erscheinen hier.</small></div>';
-    return;
-  }
-
-  // Nachweise übersichtlich nach Auftraggeber → Bauvorhaben → Datum gruppieren.
+  if(!reports.length){l.innerHTML='<div class="panel emptyState"><div class="emptyIcon">▤</div><b>Noch keine Nachweise</b><small>Gespeicherte Tagelohnnachweise erscheinen hier.</small></div>';return;}
   const groups=new Map();
-  reports.forEach((r,i)=>{
-    const contractor=(r.contractor||'Unbekannter Auftraggeber').trim()||'Unbekannter Auftraggeber';
-    const project=(r.project||'Ohne Bauvorhaben').trim()||'Ohne Bauvorhaben';
-    if(!groups.has(contractor)) groups.set(contractor,new Map());
-    if(!groups.get(contractor).has(project)) groups.get(contractor).set(project,[]);
-    groups.get(contractor).get(project).push({r,i});
-  });
-
+  reports.forEach((r,i)=>{const contractor=(r.contractor||'Unbekannter Auftraggeber').trim()||'Unbekannter Auftraggeber';const project=(r.project||'Ohne Bauvorhaben').trim()||'Ohne Bauvorhaben';if(!groups.has(contractor))groups.set(contractor,new Map());if(!groups.get(contractor).has(project))groups.get(contractor).set(project,[]);groups.get(contractor).get(project).push({r,i});});
   l.innerHTML='';
-  [...groups.entries()]
-    .sort((a,b)=>a[0].localeCompare(b[0],'de'))
-    .forEach(([contractor,projects])=>{
-      const folder=document.createElement('details');
-      folder.className='archiveFolder';
-      folder.open=true;
-      const total=[...projects.values()].reduce((n,a)=>n+a.length,0);
-
-      const summary=document.createElement('summary');
-      summary.innerHTML=`
-        <span class="folderIcon">📁</span>
-        <span class="folderInfo"><b>${esc(contractor)}</b><small>${total} Nachweis${total===1?'':'e'}</small></span>
-        <span class="folderChevron">⌄</span>`;
-      folder.append(summary);
-
-      const projectWrap=document.createElement('div');
-      projectWrap.className='projectList';
-
-      [...projects.entries()]
-        .sort((a,b)=>a[0].localeCompare(b[0],'de'))
-        .forEach(([project,items])=>{
-          const projectBox=document.createElement('details');
-          projectBox.className='projectFolder';
-          projectBox.open=true;
-
-          const projectSummary=document.createElement('summary');
-          projectSummary.innerHTML=`
-            <span class="projectIcon">▰</span>
-            <span class="projectInfo"><b>${esc(project)}</b><small>${items.length} Nachweis${items.length===1?'':'e'}</small></span>
-            <span class="projectChevron">⌄</span>`;
-          projectBox.append(projectSummary);
-
-          const itemsWrap=document.createElement('div');
-          itemsWrap.className='archiveItems';
-          items.sort((a,b)=>String(b.r.date||'').localeCompare(String(a.r.date||'')));
-
-          items.forEach(({r,i})=>{
-            const d=document.createElement('div');
-            d.className='archiveItem';
-            const signed=!!r.signed;
-            d.innerHTML=`
-              <div class="archiveDate">
-                <b>${esc(formatDate(r.date))}</b>
-                <small>${signed?'Unterschrieben':'Entwurf'}</small>
-              </div>
-              <span class="statusBadge ${signed?'signed':'draft'}">${signed?'✓':'•'} ${signed?'Unterschrieben':'Entwurf'}</span>
-              <button type="button">Öffnen</button>`;
-            d.querySelector('button').onclick=()=>{
-              editingReportIndex=i;
-              fill(r);
-              show('editor');
-            };
-            itemsWrap.append(d);
-          });
-
-          projectBox.append(itemsWrap);
-          projectWrap.append(projectBox);
-        });
-
-      folder.append(projectWrap);
-      l.append(folder);
-    });
+  [...groups.entries()].sort((a,b)=>a[0].localeCompare(b[0],'de')).forEach(([contractor,projects])=>{
+    const folder=document.createElement('section');folder.className='archiveFolderCard';
+    const total=[...projects.values()].reduce((n,a)=>n+a.length,0);
+    const head=document.createElement('button');head.type='button';head.className='archiveFolderHead';head.setAttribute('aria-expanded','true');
+    head.innerHTML=`<span class="folderIconBig">📁</span><span class="folderTitle"><strong>${esc(contractor)}</strong><small>${total} ${total===1?'Nachweis':'Nachweise'}</small></span><span class="folderArrow">⌃</span>`;
+    const body=document.createElement('div');body.className='archiveFolderBody';
+    head.onclick=()=>{const closed=body.hidden;body.hidden=!closed;head.setAttribute('aria-expanded',String(closed));head.querySelector('.folderArrow').textContent=closed?'⌃':'⌄';};
+    [...projects.entries()].sort((a,b)=>a[0].localeCompare(b[0],'de')).forEach(([project,items])=>{
+      const box=document.createElement('section');box.className='projectCard';
+      const ph=document.createElement('button');ph.type='button';ph.className='projectHead';ph.setAttribute('aria-expanded','true');
+      ph.innerHTML=`<span class="projectIconBig">▣</span><span class="projectTitle"><strong>${esc(project)}</strong><small>${items.length} ${items.length===1?'Nachweis':'Nachweise'}</small></span><span class="projectArrow">⌃</span>`;
+      const pb=document.createElement('div');pb.className='projectBody';
+      ph.onclick=()=>{const closed=pb.hidden;pb.hidden=!closed;ph.setAttribute('aria-expanded',String(closed));ph.querySelector('.projectArrow').textContent=closed?'⌃':'⌄';};
+      items.sort((a,b)=>String(b.r.date||'').localeCompare(String(a.r.date||''))).forEach(({r,i})=>{
+        const row=document.createElement('div');row.className='reportRow';const signed=!!r.signed;
+        row.innerHTML=`<div class="reportMain"><strong>${esc(formatDate(r.date)||'Ohne Datum')}</strong><span class="reportStatus ${signed?'isSigned':'isDraft'}">${signed?'✓ Unterschrieben':'Entwurf'}</span></div><button type="button" class="openReport">Öffnen</button>`;
+        row.querySelector('.openReport').onclick=()=>{editingReportIndex=i;fill(r);show('editor');};pb.append(row);
+      });box.append(ph,pb);body.append(box);
+    });folder.append(head,body);l.append(folder);
+  });
 }
+
 function formatDate(iso){if(!iso)return '';let d=new Date(iso+'T12:00:00');return new Intl.DateTimeFormat('de-DE',{weekday:'long',day:'2-digit',month:'long',year:'numeric'}).format(d).replace(/^./,m=>m.toUpperCase())}
 function shortDate(iso){if(!iso)return '';let d=new Date(iso+'T12:00:00');return `${String(d.getDate()).padStart(2,'0')}.${String(d.getMonth()+1).padStart(2,'0')}.${d.getFullYear()}`}
 

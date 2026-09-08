@@ -7,7 +7,16 @@
 <main>
 <section id="home" class="screen active"><button id="new2" class="primary big">＋ Neuer Tagelohnnachweis</button>
 <div class="cards"><button class="card" id="archiveBtn">📄 <span><b>Meine Nachweise</b><small id="count">0 Nachweise</small></span>›</button>
-<button class="card" id="customersBtn">👥 <span><b>Kunden</b><small>Kunden anlegen und Adressen verwalten</small></span>›</button></div></section>
+<button class="card" id="customersBtn">👥 <span><b>Kunden</b><small>Kunden anlegen und Adressen verwalten</small></span>›</button>
+<button class="card" id="servicesBtn">⚙️ <span><b>Leistungen</b><small>Leistungen für Mitarbeiter und Maschinen verwalten</small></span>›</button></div></section>
+
+<section id="services" class="screen">
+<div class="title"><h2>Leistungen verwalten</h2><button id="homeFromServices">Zurück</button></div>
+<div class="panel"><h2>Neue Leistung anlegen</h2>
+<label>Bezeichnung<input id="serviceName" placeholder="z. B. Baggerfahrer"></label>
+<button id="addService" class="primary">Leistung hinzufügen</button></div>
+<div class="panel"><h2>Vorhandene Leistungen</h2><div id="serviceList"></div></div>
+</section>
 
 <section id="editor" class="screen">
 <div class="steps">1 Kopf · 2 Mitarbeiter · 3 Arbeiten · 4 Unterschrift · 5 PDF</div>

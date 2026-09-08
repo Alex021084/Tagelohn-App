@@ -2,8 +2,52 @@ const $=x=>document.getElementById(x);
 let reports=JSON.parse(localStorage.tagelohn||'[]');
 const defaultCustomers=[{id:'dreyer',name:'Dreyer Hochbau GmbH & Co. KG',address:'Mühlenberg 12\n27404 Elsdorf'}];
 let customers=JSON.parse(localStorage.tagelohnCustomers||'null')||defaultCustomers;
+let services=JSON.parse(localStorage.tagelohnServices||'null');
+const defaultServices=[
+  'Vorarbeiter',
+  'Facharbeiter',
+  'Minibagger',
+  'Kompaktbagger',
+  'Kompaktbagger mit Hydraulikmeißel',
+  'Raupenbagger',
+  'Radlader 1,5 cbm',
+  'Radlader 3 cbm',
+  'Radlader mit Planmatic',
+  'LKW Solo',
+  'LKW Anhängerzug',
+  'LKW mit Tieflader',
+  'Asphaltwalze',
+  'Transporter'
+];
+if(!Array.isArray(services)||!services.length) services=[...defaultServices];
 
 function persistCustomers(){localStorage.tagelohnCustomers=JSON.stringify(customers)}
+function persistServices(){localStorage.tagelohnServices=JSON.stringify(services)}
+function openServices(){renderServices();show('services')}
+function renderServices(){
+  const l=$('serviceList'); l.innerHTML='';
+  services.forEach((name,i)=>{
+    const d=document.createElement('div'); d.className='serviceRow';
+    d.innerHTML=`<input class="serviceEdit" value="${esc(name)}"><div class="serviceActions"><button class="serviceSave">Speichern</button><button class="del serviceDel">Löschen</button></div>`;
+    d.querySelector('.serviceSave').onclick=()=>{
+      const value=d.querySelector('.serviceEdit').value.trim();
+      if(!value){alert('Bitte eine Bezeichnung eingeben.');return}
+      if(services.some((s,j)=>j!==i&&s.toLowerCase()===value.toLowerCase())){alert('Diese Leistung gibt es bereits.');return}
+      services[i]=value;persistServices();renderServices();
+    };
+    d.querySelector('.serviceDel').onclick=()=>{
+      if(confirm('Leistung wirklich löschen?')){services.splice(i,1);persistServices();renderServices();}
+    };
+    l.append(d);
+  });
+  if(!services.length)l.innerHTML='<div class="empty">Noch keine Leistungen angelegt.</div>';
+}
+function addService(){
+  const value=$('serviceName').value.trim();
+  if(!value){alert('Bitte eine Bezeichnung eingeben.');return}
+  if(services.some(s=>s.toLowerCase()===value.toLowerCase())){alert('Diese Leistung gibt es bereits.');return}
+  services.push(value);persistServices();$('serviceName').value='';renderServices();
+}
 function show(id){document.querySelectorAll('.screen').forEach(x=>x.classList.remove('active'));$(id).classList.add('active');scrollTo(0,0)}
 function today(){return new Date().toISOString().slice(0,10)}
 function esc(v){return String(v??'').replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;').replaceAll('"','&quot;')}
@@ -56,9 +100,16 @@ function addCustomer(){
   alert('Kunde gespeichert.');
 }
 
+function serviceOptions(selected=''){
+  return '<option value="">— Leistung auswählen —</option>'+services.map(s=>`<option value="${esc(s)}"${s===selected?' selected':''}>${esc(s)}</option>`).join('');
+}
 function addEmp(e={}){
   let d=document.createElement('div'); d.className='employee';
-  d.innerHTML=`<button class="del">Löschen</button><b>Mitarbeiter</b><div class="grid"><label>Stunden<input class="hours" type="number" step=".25" value="${e.hours??0}"></label><label>Art der Tätigkeit<input class="activity" value="${esc(e.activity||'')}"></label></div><label>Name des Mitarbeiters<input class="name" value="${esc(e.name||'')}"></label><div class="grid grid3"><label>Anfang<input class="start" type="time" value="${e.start||''}"></label><label>Ende<input class="end" type="time" value="${e.end||''}"></label><label>Pause<input class="pause" type="number" value="${e.pause??0}"></label></div>`;
+  d.innerHTML=`<button class="del">Löschen</button><b>Mitarbeiter / Leistung</b>
+  <div class="grid"><label>Stunden<input class="hours" type="number" step=".25" value="${e.hours??0}"></label>
+  <label>Leistung<select class="service">${serviceOptions(e.service||e.activity||'')}</select></label></div>
+  <label>Name des Mitarbeiters<input class="name" value="${esc(e.name||'')}"></label>
+  <div class="grid grid3"><label>Anfang<input class="start" type="time" value="${e.start||''}"></label><label>Ende<input class="end" type="time" value="${e.end||''}"></label><label>Pause<input class="pause" type="number" value="${e.pause??0}"></label></div>`;
   d.querySelector('.del').onclick=()=>d.remove();
   ['start','end','pause'].forEach(c=>d.querySelector('.'+c).oninput=()=>calc(d));
   $('employees').append(d);
@@ -80,7 +131,7 @@ function fill(r){
   clearSignature();
   if(r.signature){let img=new Image();img.onload=()=>ctx.drawImage(img,0,0,c.width,c.height);img.src=r.signature;}
 }
-function collect(){return{date:$('date').value,contractor:contractorName(),address:$('address').value,project:$('project').value,client:$('client').value,employees:[...document.querySelectorAll('.employee')].map(d=>({hours:+d.querySelector('.hours').value||0,activity:d.querySelector('.activity').value,name:d.querySelector('.name').value,start:d.querySelector('.start').value,end:d.querySelector('.end').value,pause:+d.querySelector('.pause').value||0})),works:[...document.querySelectorAll('#works input')].map(x=>x.value).filter(Boolean),materials:[...document.querySelectorAll('#materials input')].map(x=>x.value).filter(Boolean),signature:$('sig').toDataURL()}}
+function collect(){return{date:$('date').value,contractor:contractorName(),address:$('address').value,project:$('project').value,client:$('client').value,employees:[...document.querySelectorAll('.employee')].map(d=>{const service=d.querySelector('.service').value;return {hours:+d.querySelector('.hours').value||0,service,activity:service,name:d.querySelector('.name').value,start:d.querySelector('.start').value,end:d.querySelector('.end').value,pause:+d.querySelector('.pause').value||0}}),works:[...document.querySelectorAll('#works input')].map(x=>x.value).filter(Boolean),materials:[...document.querySelectorAll('#materials input')].map(x=>x.value).filter(Boolean),signature:$('sig').toDataURL()}}
 function save(){localStorage.tagelohn=JSON.stringify(reports);$('count').textContent=reports.length+' Nachweis'+(reports.length==1?'':'e')}
 function render(){let l=$('list');l.innerHTML=reports.length?'':'<div class="panel">Noch keine Nachweise gespeichert.</div>';reports.forEach((r,i)=>{let d=document.createElement('div');d.className='archive';d.innerHTML=`<b>${esc(formatDate(r.date))}</b><br>${esc(r.project)}<small>${esc(r.contractor)}</small><br><button>Öffnen</button>`;d.querySelector('button').onclick=()=>{fill(r);show('editor')};l.append(d)})}
 
@@ -107,7 +158,7 @@ async function createPdf(){
     splitLines(data.address).slice(0,2).forEach((ln,i)=>page.drawText(ln,{x:54,y:H-(180+i*20),size:9.5,font:normal}));
     cover(180,241,375,24);drawWrapped(page,normal,data.project||'',198,H-263,350,9.5,1,2);
     const rowTop=H-320,rowStep=20;
-    data.employees.slice(0,12).forEach((e,i)=>{const y=rowTop-i*rowStep,hours=(Number(e.hours)||0).toFixed(2).replace('.',',');if(hours!=='0,00')page.drawText(hours,{x:84,y,size:9.5,font:normal});if(e.activity)drawWrapped(page,normal,e.activity,145,y,92,9.2,1,2);if(e.name)page.drawText(e.name,{x:247,y,size:9.5,font:normal});if(e.start)page.drawText(e.start,{x:412,y,size:9.5,font:normal});if(e.end)page.drawText(e.end,{x:466,y,size:9.5,font:normal});if(Number(e.pause))page.drawText(String(e.pause),{x:517,y,size:9.5,font:normal})});
+    data.employees.slice(0,12).forEach((e,i)=>{const y=rowTop-i*rowStep,hours=(Number(e.hours)||0).toFixed(2).replace('.',',');if(hours!=='0,00')page.drawText(hours,{x:84,y,size:9.5,font:normal});if(e.service||e.activity)drawWrapped(page,normal,e.service||e.activity,145,y,92,9.2,1,2);if(e.name)page.drawText(e.name,{x:247,y,size:9.5,font:normal});if(e.start)page.drawText(e.start,{x:412,y,size:9.5,font:normal});if(e.end)page.drawText(e.end,{x:466,y,size:9.5,font:normal});if(Number(e.pause))page.drawText(String(e.pause),{x:517,y,size:9.5,font:normal})});
     const contentTop=H-565;data.works.slice(0,12).forEach((v,i)=>drawWrapped(page,normal,'• '+v,54,contentTop-i*14,285,9.2,1,2));data.materials.slice(0,12).forEach((v,i)=>drawWrapped(page,normal,'• '+v,355,contentTop-i*14,195,9.2,1,2));
     if(data.signature&&data.signature.length>100){const sigPng=await pdf.embedPng(data.signature);page.drawImage(sigPng,{x:54,y:70,width:190,height:70,opacity:1})}
     const out=await pdf.save(),blob=new Blob([out],{type:'application/pdf'}),url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.target='_blank';a.rel='noopener';a.click();setTimeout(()=>URL.revokeObjectURL(url),60000);
@@ -117,10 +168,10 @@ async function createPdf(){
 $('new').onclick=$('new2').onclick=()=>{fill({});show('editor')};
 $('addEmp').onclick=()=>addEmp();$('addWork').onclick=()=>item('works');$('addMat').onclick=()=>item('materials');
 $('archiveBtn').onclick=()=>{render();show('archive')};$('homeBtn').onclick=()=>show('home');$('customersBtn').onclick=openCustomers;$('homeFromCustomers').onclick=()=>show('home');
-$('manageCustomers').onclick=openCustomers;$('addCustomer').onclick=addCustomer;$('contractorSelect').onchange=customerChanged;
+$('manageCustomers').onclick=openCustomers;$('addCustomer').onclick=addCustomer;$('contractorSelect').onchange=customerChanged;$('servicesBtn').onclick=openServices;$('homeFromServices').onclick=()=>show('home');$('addService').onclick=addService;
 $('save').onclick=()=>{reports.unshift(collect());save();render();show('archive')};$('pdf').onclick=createPdf;
 document.querySelectorAll('nav button').forEach(b=>b.onclick=()=>show(b.dataset.s));
-persistCustomers();renderCustomerSelect('');save();
+persistCustomers();persistServices();renderCustomerSelect('');save();
 
 let c=$('sig'),ctx=c.getContext('2d'),down=false;
 c.onpointerdown=e=>{down=true;ctx.beginPath();let p=pos(e);ctx.moveTo(p.x,p.y)};c.onpointermove=e=>{if(!down)return;let p=pos(e);ctx.lineTo(p.x,p.y);ctx.stroke()};window.onpointerup=()=>down=false;

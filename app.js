@@ -215,6 +215,20 @@ function fill(r){
 }
 function collect(){return{date:$('date').value,contractor:contractorName(),address:$('address').value,project:$('project').value,client:$('client').value,employees:[...document.querySelectorAll('.employee')].map(d=>{const service=d.querySelector('.service').value;return {hours:+d.querySelector('.hours').value||0,service,activity:service,name:d.querySelector('.name').value,start:d.querySelector('.start').value,end:d.querySelector('.end').value,pause:+d.querySelector('.pause').value||0}}),works:[...document.querySelectorAll('#works input')].map(x=>x.value).filter(Boolean),materials:[...document.querySelectorAll('#materials input')].map(x=>x.value).filter(Boolean),signature:$('sig').toDataURL()}}
 function save(){localStorage.tagelohn=JSON.stringify(reports);$('count').textContent=reports.length+' Nachweis'+(reports.length==1?'':'e')}
+
+// Merkt sich den zuletzt geöffneten/geschlossenen Zustand der Auftraggeber- und Baustellenordner.
+const archiveStateKey='tagelohnArchiveState';
+function getArchiveState(){
+  try{return JSON.parse(localStorage.getItem(archiveStateKey)||'{}')||{};}catch(e){return {};}
+}
+function setArchiveState(key,isOpen){
+  const state=getArchiveState();
+  state[key]=!!isOpen;
+  localStorage.setItem(archiveStateKey,JSON.stringify(state));
+}
+function archiveKey(type,contractor,project=''){
+  return type+'|'+String(contractor||'').trim()+'|'+String(project||'').trim();
+}
 function render(){
   const l=$('list');
   if(!reports.length){l.innerHTML='<div class="panel emptyState"><div class="emptyIcon">▤</div><b>Noch keine Nachweise</b><small>Gespeicherte Tagelohnnachweise erscheinen hier.</small></div>';return;}
@@ -224,16 +238,22 @@ function render(){
   [...groups.entries()].sort((a,b)=>a[0].localeCompare(b[0],'de')).forEach(([contractor,projects])=>{
     const folder=document.createElement('section');folder.className='archiveFolderCard';
     const total=[...projects.values()].reduce((n,a)=>n+a.length,0);
-    const head=document.createElement('button');head.type='button';head.className='archiveFolderHead';head.setAttribute('aria-expanded','true');
-    head.innerHTML=`<span class="folderIconBig">📁</span><span class="folderTitle"><strong>${esc(contractor)}</strong><small>${total} ${total===1?'Nachweis':'Nachweise'}</small></span><span class="folderArrow">⌃</span>`;
-    const body=document.createElement('div');body.className='archiveFolderBody';
-    head.onclick=()=>{const closed=body.hidden;body.hidden=!closed;head.setAttribute('aria-expanded',String(closed));head.querySelector('.folderArrow').textContent=closed?'⌃':'⌄';};
+    const head=document.createElement('button');head.type='button';head.className='archiveFolderHead';
+    const folderStateKey=archiveKey('contractor',contractor);
+    const folderIsOpen=getArchiveState()[folderStateKey] !== false;
+    head.setAttribute('aria-expanded',String(folderIsOpen));
+    head.innerHTML=`<span class="folderIconBig">📁</span><span class="folderTitle"><strong>${esc(contractor)}</strong><small>${total} ${total===1?'Nachweis':'Nachweise'}</small></span><span class="folderArrow">${folderIsOpen?'⌃':'⌄'}</span>`;
+    const body=document.createElement('div');body.className='archiveFolderBody';body.hidden=!folderIsOpen;
+    head.onclick=()=>{const isOpen=!body.hidden;const next=!isOpen;body.hidden=!next;head.setAttribute('aria-expanded',String(next));head.querySelector('.folderArrow').textContent=next?'⌃':'⌄';setArchiveState(folderStateKey,next);};
     [...projects.entries()].sort((a,b)=>a[0].localeCompare(b[0],'de')).forEach(([project,items])=>{
       const box=document.createElement('section');box.className='projectCard';
-      const ph=document.createElement('button');ph.type='button';ph.className='projectHead';ph.setAttribute('aria-expanded','true');
-      ph.innerHTML=`<span class="projectIconBig">▣</span><span class="projectTitle"><strong>${esc(project)}</strong><small>${items.length} ${items.length===1?'Nachweis':'Nachweise'}</small></span><span class="projectArrow">⌃</span>`;
-      const pb=document.createElement('div');pb.className='projectBody';
-      ph.onclick=()=>{const closed=pb.hidden;pb.hidden=!closed;ph.setAttribute('aria-expanded',String(closed));ph.querySelector('.projectArrow').textContent=closed?'⌃':'⌄';};
+      const ph=document.createElement('button');ph.type='button';ph.className='projectHead';
+      const projectStateKey=archiveKey('project',contractor,project);
+      const projectIsOpen=getArchiveState()[projectStateKey] !== false;
+      ph.setAttribute('aria-expanded',String(projectIsOpen));
+      ph.innerHTML=`<span class="projectIconBig">▣</span><span class="projectTitle"><strong>${esc(project)}</strong><small>${items.length} ${items.length===1?'Nachweis':'Nachweise'}</small></span><span class="projectArrow">${projectIsOpen?'⌃':'⌄'}</span>`;
+      const pb=document.createElement('div');pb.className='projectBody';pb.hidden=!projectIsOpen;
+      ph.onclick=()=>{const isOpen=!pb.hidden;const next=!isOpen;pb.hidden=!next;ph.setAttribute('aria-expanded',String(next));ph.querySelector('.projectArrow').textContent=next?'⌃':'⌄';setArchiveState(projectStateKey,next);};
       items.sort((a,b)=>String(b.r.date||'').localeCompare(String(a.r.date||''))).forEach(({r,i})=>{
         const row=document.createElement('div');row.className='reportRow';const signed=!!r.signed;
         row.innerHTML=`<div class="reportMain"><strong>${esc(formatDate(r.date)||'Ohne Datum')}</strong><span class="reportStatus ${signed?'isSigned':'isDraft'}">${signed?'✓ Unterschrieben':'Entwurf'}</span></div><button type="button" class="openReport">Öffnen</button>`;

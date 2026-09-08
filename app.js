@@ -208,7 +208,17 @@ async function createPdf(){
     data.employees.slice(0,12).forEach((e,i)=>{const y=rowTop-i*rowStep,hours=(Number(e.hours)||0).toFixed(2).replace('.',',');if(hours!=='0,00')page.drawText(hours,{x:84,y,size:9.5,font:normal});if(e.service||e.activity)drawWrapped(page,normal,e.service||e.activity,145,y,92,9.2,1,2);if(e.name)page.drawText(e.name,{x:247,y,size:9.5,font:normal});if(e.start)page.drawText(e.start,{x:412,y,size:9.5,font:normal});if(e.end)page.drawText(e.end,{x:466,y,size:9.5,font:normal});if(Number(e.pause))page.drawText(String(e.pause),{x:517,y,size:9.5,font:normal})});
     const contentTop=H-565;data.works.slice(0,12).forEach((v,i)=>drawWrapped(page,normal,'• '+v,54,contentTop-i*14,285,9.2,1,2));data.materials.slice(0,12).forEach((v,i)=>drawWrapped(page,normal,'• '+v,355,contentTop-i*14,195,9.2,1,2));
     if(data.signature&&data.signature.length>100){const sigPng=await pdf.embedPng(data.signature);page.drawImage(sigPng,{x:54,y:70,width:190,height:70,opacity:1})}
-    const out=await pdf.save(),blob=new Blob([out],{type:'application/pdf'}),url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.target='_blank';a.rel='noopener';a.click();setTimeout(()=>URL.revokeObjectURL(url),60000);
+    const out=await pdf.save();
+    const blob=new Blob([out],{type:'application/pdf'});
+    const url=URL.createObjectURL(blob);
+    const a=document.createElement('a');
+    a.href=url;
+    a.download=`Tagelohnnachweis-${data.date||'Nachweis'}.pdf`;
+    a.style.display='none';
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    setTimeout(()=>URL.revokeObjectURL(url),60000);
   }catch(err){console.error(err);alert('PDF konnte nicht erstellt werden: '+err.message)}finally{btn.disabled=false;btn.textContent='PDF erstellen'}
 }
 

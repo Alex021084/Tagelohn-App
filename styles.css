@@ -108,3 +108,25 @@ select{width:100%;margin-top:5px;padding:11px;border:1px solid #d5d5da;border-ra
 .serviceRow .serviceEdit,.serviceRow .employeeEdit{width:100%;margin:0;border:1px solid #d5d5da;border-radius:12px;padding:12px;background:#fff;font:inherit;}
 .serviceRow .swipeDelete{width:104px;}
 @media(max-width:520px){.serviceRow{margin:8px 0}.serviceRow .swipeDelete{width:104px}}
+
+/* Elegante Verwaltung von Mitarbeitern und Leistungen */
+.manageIntro{display:flex;align-items:center;gap:12px;margin:4px 0 14px;padding:4px 2px}
+.manageIcon{width:46px;height:46px;border-radius:14px;background:#eaf2ff;display:grid;place-items:center;font-size:23px}
+.manageIntro strong{display:block;font-size:20px;line-height:1.15}
+.manageIntro small{display:block;color:#777;font-size:13px;margin-top:3px}
+.addBar{display:flex;align-items:center;gap:10px;background:#fff;border:1px solid #e2e2e7;border-radius:16px;padding:8px 8px 8px 14px;margin-bottom:18px;box-shadow:0 1px 2px rgba(0,0,0,.04)}
+.addBar input{border:0!important;background:transparent!important;margin:0!important;padding:10px 4px!important;outline:none;box-shadow:none!important;font-size:17px}
+.addCircle{flex:0 0 44px;width:44px;height:44px;border:0;border-radius:14px;background:#0a84ff;color:#fff;font-size:28px;line-height:1;display:grid;place-items:center}
+.listPanel{background:#fff;border-radius:18px;padding:6px 10px 10px;box-shadow:0 1px 3px rgba(0,0,0,.05);border:1px solid #e2e2e7}
+.listHeader{padding:8px 6px 10px;border-bottom:1px solid #eee}
+.listHeader h2{margin:0;font-size:18px}
+.listHeader small{display:block;color:#8a8a8f;font-size:12px;margin-top:3px}
+.serviceRow{margin:6px 0!important;border-radius:14px!important;background:#fff!important}
+.serviceRow .swipeWrap{border-radius:14px!important}
+.serviceRow .swipeContent{border:1px solid #ececf0;border-radius:14px!important;min-height:62px;display:flex;align-items:center;padding:0 12px!important}
+.serviceRow .serviceEdit,.serviceRow .employeeEdit{border:0!important;border-radius:0!important;background:transparent!important;padding:12px 8px 12px 4px!important;margin:0!important;font-size:17px!important;outline:none;box-shadow:none!important}
+.serviceRow::before{content:'•';width:28px;height:28px;border-radius:9px;background:#eef4ff;color:#0a84ff;display:grid;place-items:center;font-size:20px;flex:0 0 28px;position:relative;z-index:3;pointer-events:none}
+.serviceRow .swipeDelete{width:96px!important}
+.serviceRow .swipeDeleteIcon{width:58px!important;height:46px!important;border-radius:15px!important}
+.serviceRow .swipeDeleteLabel{font-size:13px!important}
+@media(max-width:520px){.screen{padding:14px 16px}.manageIntro{margin-top:2px}.listPanel{padding-left:8px;padding-right:8px}.serviceRow .swipeContent{min-height:60px}.serviceRow .serviceEdit,.serviceRow .employeeEdit{font-size:16px!important}}

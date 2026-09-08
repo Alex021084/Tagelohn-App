@@ -13,18 +13,16 @@
 
 <section id="services" class="screen">
 <div class="title"><h2>Leistungen verwalten</h2><button id="homeFromServices">Zurück</button></div>
-<div class="panel"><h2>Neue Leistung anlegen</h2>
-<label>Bezeichnung<input id="serviceName" placeholder="z. B. Baggerfahrer"></label>
-<button id="addService" class="primary">Leistung hinzufügen</button></div>
-<div class="panel"><h2>Vorhandene Leistungen</h2><div id="serviceList"></div></div>
+<div class="manageIntro"><div class="manageIcon">⚙️</div><div><strong>Leistungen</strong><small>Leistungen für den Tagelohnnachweis verwalten</small></div></div>
+<div class="addBar"><input id="serviceName" placeholder="Neue Leistung…" aria-label="Neue Leistung"><button id="addService" class="addCircle" aria-label="Leistung hinzufügen">＋</button></div>
+<div class="listPanel"><div class="listHeader"><h2>Vorhandene Leistungen</h2><small>Nach links wischen zum Löschen</small></div><div id="serviceList"></div></div>
 </section>
 
 <section id="employeeManager" class="screen">
 <div class="title"><h2>Mitarbeiter verwalten</h2><button id="homeFromEmployees">Zurück</button></div>
-<div class="panel"><h2>Neuen Mitarbeiter anlegen</h2>
-<label>Name des Mitarbeiters<input id="employeeName" placeholder="z. B. Max Mustermann"></label>
-<button id="addEmployee" class="primary">Mitarbeiter hinzufügen</button></div>
-<div class="panel"><h2>Vorhandene Mitarbeiter</h2><div id="employeeList"></div></div>
+<div class="manageIntro"><div class="manageIcon">👷</div><div><strong>Mitarbeiter</strong><small>Stammpersonal für den Tagelohnnachweis verwalten</small></div></div>
+<div class="addBar"><input id="employeeName" placeholder="Neuen Mitarbeiter…" aria-label="Neuer Mitarbeiter"><button id="addEmployee" class="addCircle" aria-label="Mitarbeiter hinzufügen">＋</button></div>
+<div class="listPanel"><div class="listHeader"><h2>Vorhandene Mitarbeiter</h2><small>Nach links wischen zum Löschen</small></div><div id="employeeList"></div></div>
 </section>
 
 <section id="editor" class="screen">
@@ -73,4 +71,4 @@
 </main>
 <nav><button data-s="home">⌂<small>Start</small></button><button data-s="archive">▤<small>Nachweise</small></button><button data-s="editor">＋<small>Neu</small></button></nav>
 <script src="https://unpkg.com/pdf-lib@1.17.1/dist/pdf-lib.min.js"></script>
-<script src="app.js?v=swipe-action-20260908-01"></script></body></html>
+<script src="app.js?v=manage-elegant-20260908-02"></script></body></html>

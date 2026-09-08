@@ -135,3 +135,12 @@ select{width:100%;margin-top:5px;padding:11px;border:1px solid #d5d5da;border-ra
 .saveManage{width:100%;box-sizing:border-box;flex:0 0 auto;border:0;border-radius:12px;background:#0a84ff;color:#fff;padding:13px 18px;font-size:16px;font-weight:700;white-space:nowrap;min-height:52px;}
 .saveManage:active{transform:scale(.98)}
 @media(max-width:520px){.saveManage{padding:13px 16px;font-size:16px;min-height:52px}.addBar{gap:8px;padding:10px}}
+
+/* Final: kompakte X-Wischaktion für Mitarbeiter und Leistungen */
+.swipeDelete{width:72px!important; padding:0!important; background:transparent!important; display:none!important; align-items:center!important; justify-content:center!important;}
+.swipeTarget.swipeOpen .swipeDelete{display:flex!important;}
+.swipeDeleteIcon{width:48px!important;height:48px!important;border-radius:14px!important;background:#ff3b30!important;color:#fff!important;display:grid!important;place-items:center!important;font-size:34px!important;font-weight:300!important;line-height:1!important;box-shadow:0 1px 3px rgba(0,0,0,.12)!important;font-family:-apple-system,BlinkMacSystemFont,"Helvetica Neue",Arial,sans-serif!important;}
+.swipeDeleteLabel{display:none!important;}
+.serviceRow .swipeDelete{width:72px!important;}
+.serviceRow .swipeDeleteIcon{width:46px!important;height:46px!important;border-radius:14px!important;font-size:32px!important;}
+@media(max-width:520px){.swipeDelete{width:72px!important}.serviceRow .swipeDelete{width:72px!important}.swipeDeleteIcon{width:46px!important;height:46px!important}}

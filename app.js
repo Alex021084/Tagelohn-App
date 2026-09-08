@@ -266,7 +266,7 @@ function enableSwipeDelete(target,onDelete){
   const del=document.createElement('button');
   del.type='button';
   del.className='swipeDelete';
-  del.innerHTML=`<span class="swipeDeleteIcon" aria-hidden="true"><svg viewBox="0 0 24 24" focusable="false"><path d="M8 8v9m4-9v9m4-9v9M5 6h14M9 6V4h6v2m-9 0 1 15h8l1-15"/></svg></span><span class="swipeDeleteLabel">Löschen</span>`;
+  del.innerHTML=`<span class="swipeDeleteIcon" aria-hidden="true">×</span>`;
   del.setAttribute('aria-label','Löschen');
   del.style.display='none';
 

@@ -288,7 +288,7 @@ async function createPdf(options={}){
       if(options.askLocation && navigator.share && navigator.canShare){
         const file=new File([blob],filename,{type:'application/pdf'});
         if(navigator.canShare({files:[file]})){
-          await navigator.share({title:filename,text:'Unterschriebener Tagelohnnachweis',files:[file]});
+          await navigator.share({files:[file]});
           return true;
         }
       }

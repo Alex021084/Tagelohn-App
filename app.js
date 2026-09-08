@@ -1,5 +1,6 @@
 const $=x=>document.getElementById(x);
 let reports=JSON.parse(localStorage.tagelohn||'[]');
+let editingReportIndex=null;
 const defaultCustomers=[{id:'dreyer',name:'Dreyer Hochbau GmbH & Co. KG',address:'Mühlenberg 12\n27404 Elsdorf'}];
 let customers=JSON.parse(localStorage.tagelohnCustomers||'null')||defaultCustomers;
 let services=JSON.parse(localStorage.tagelohnServices||'null');
@@ -181,7 +182,6 @@ function summaryMoneyHours(){
 }
 function renderSummary(){
   const data=collect();
-  const total=summaryMoneyHours();
   const rows=data.employees.filter(e=>e.name||e.service||e.hours||e.start||e.end||e.pause).map(e=>`
     <tr><td>${esc(e.name||'—')}</td><td>${esc(e.service||'—')}</td><td>${(Number(e.hours)||0).toFixed(2).replace('.',',')} Std.</td><td>${esc(e.start||'—')}</td><td>${esc(e.end||'—')}</td><td>${e.pause?esc(String(e.pause))+' min':'—'}</td></tr>`).join('');
   $('summaryContent').innerHTML=`
@@ -193,7 +193,6 @@ function renderSummary(){
     </div></div>
     <div class="summaryBlock"><h3>Mitarbeiter und Leistungen</h3>
       ${rows?`<div style="overflow:auto"><table class="summaryTable"><thead><tr><th>Mitarbeiter</th><th>Leistung</th><th>Stunden</th><th>Anfang</th><th>Ende</th><th>Pause</th></tr></thead><tbody>${rows}</tbody></table></div>`:'<div class="empty">Keine Mitarbeiter eingetragen.</div>'}
-      <div class="summaryTotal">Gesamtstunden: ${total.toFixed(2).replace('.',',')} Std.</div>
     </div>
     <div class="summaryBlock"><h3>Ausgeführte Arbeiten</h3>${data.works.length?`<ul class="summaryList">${data.works.map(v=>`<li>${esc(v)}</li>`).join('')}</ul>`:'<div class="empty">Keine Angaben.</div>'}</div>
     <div class="summaryBlock"><h3>Material / sonstige Leistungen</h3>${data.materials.length?`<ul class="summaryList">${data.materials.map(v=>`<li>${esc(v)}</li>`).join('')}</ul>`:'<div class="empty">Keine Angaben.</div>'}</div>
@@ -216,7 +215,7 @@ function fill(r){
 }
 function collect(){return{date:$('date').value,contractor:contractorName(),address:$('address').value,project:$('project').value,client:$('client').value,employees:[...document.querySelectorAll('.employee')].map(d=>{const service=d.querySelector('.service').value;return {hours:+d.querySelector('.hours').value||0,service,activity:service,name:d.querySelector('.name').value,start:d.querySelector('.start').value,end:d.querySelector('.end').value,pause:+d.querySelector('.pause').value||0}}),works:[...document.querySelectorAll('#works input')].map(x=>x.value).filter(Boolean),materials:[...document.querySelectorAll('#materials input')].map(x=>x.value).filter(Boolean),signature:$('sig').toDataURL()}}
 function save(){localStorage.tagelohn=JSON.stringify(reports);$('count').textContent=reports.length+' Nachweis'+(reports.length==1?'':'e')}
-function render(){let l=$('list');l.innerHTML=reports.length?'':'<div class="panel">Noch keine Nachweise gespeichert.</div>';reports.forEach((r,i)=>{let d=document.createElement('div');d.className='archive';d.innerHTML=`<b>${esc(formatDate(r.date))}</b><br>${esc(r.project)}<small>${esc(r.contractor)}</small><br><button>Öffnen</button>`;d.querySelector('button').onclick=()=>{fill(r);show('editor')};l.append(d)})}
+function render(){let l=$('list');l.innerHTML=reports.length?'':'<div class="panel">Noch keine Nachweise gespeichert.</div>';reports.forEach((r,i)=>{let d=document.createElement('div');d.className='archive';d.innerHTML=`<b>${esc(formatDate(r.date))}</b><br>${esc(r.project)}<small>${esc(r.contractor)}</small><br><button>Öffnen</button>`;d.querySelector('button').onclick=()=>{editingReportIndex=i;fill(r);show('editor')};l.append(d)})}
 
 function formatDate(iso){if(!iso)return '';let d=new Date(iso+'T12:00:00');return new Intl.DateTimeFormat('de-DE',{weekday:'long',day:'2-digit',month:'long',year:'numeric'}).format(d).replace(/^./,m=>m.toUpperCase())}
 function shortDate(iso){if(!iso)return '';let d=new Date(iso+'T12:00:00');return `${String(d.getDate()).padStart(2,'0')}.${String(d.getMonth()+1).padStart(2,'0')}.${d.getFullYear()}`}
@@ -263,7 +262,7 @@ async function createPdf(){
   }catch(err){console.error(err);alert('PDF konnte nicht erstellt werden: '+err.message)}finally{btn.disabled=false;btn.textContent='PDF erstellen'}
 }
 
-$('new').onclick=$('new2').onclick=()=>{fill({});show('editor')};
+$('new').onclick=$('new2').onclick=()=>{editingReportIndex=null;fill({});show('editor')};
 $('addEmp').onclick=()=>addEmp();$('addWork').onclick=()=>item('works');$('addMat').onclick=()=>item('materials');
 $('archiveBtn').onclick=()=>{render();show('archive')};$('homeBtn').onclick=()=>show('home');$('customersBtn').onclick=openCustomers;$('homeFromCustomers').onclick=()=>show('home');
 $('manageCustomers').onclick=openCustomers;$('addCustomer').onclick=addCustomer;$('contractorSelect').onchange=customerChanged;$('servicesBtn').onclick=openServices;$('homeFromServices').onclick=()=>show('home');$('addService').onclick=addService;$('employeesBtn').onclick=openEmployees;$('homeFromEmployees').onclick=()=>show('home');$('addEmployee').onclick=addEmployee;
@@ -280,4 +279,20 @@ $('backToEditorFromSummary').onclick=()=>show('editor');
 $('signNow').onclick=()=>{show('signatureScreen');updateSignatureStatus()};
 $('backToSummary').onclick=()=>{renderSummary();show('summaryScreen')};
 $('cancelSignature').onclick=()=>show('summaryScreen');
-$('saveSignature').onclick=()=>{if(!hasSignature()){alert('Bitte zuerst unterschreiben.');return}updateSignatureStatus();renderSummary();show('summaryScreen')};
+$('saveSignature').onclick=async()=>{
+  if(!hasSignature()){alert('Bitte zuerst unterschreiben.');return}
+  const btn=$('saveSignature');
+  btn.disabled=true; btn.textContent='✓';
+  try{
+    const signed=collect();
+    signed.signed=true;
+    signed.signedAt=new Date().toISOString();
+    if(editingReportIndex!==null && reports[editingReportIndex]) reports[editingReportIndex]=signed;
+    else {reports.unshift(signed); editingReportIndex=0;}
+    save(); render(); updateSignatureStatus();
+    await createPdf();
+    alert('Unterschrieben gespeichert und PDF erstellt.');
+    show('archive');
+  }catch(err){console.error(err);alert('Der unterschriebene Nachweis konnte nicht vollständig gespeichert werden: '+err.message)}
+  finally{btn.disabled=false;btn.textContent='➜'}
+};

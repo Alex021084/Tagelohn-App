@@ -235,112 +235,133 @@ function archiveKey(type,contractor,project=''){
 // Es werden keine permanent sichtbaren Löschen-Buttons unter den Einträgen angezeigt.
 let activeSwipeTarget=null;
 function closeActiveSwipe(){
-  if(activeSwipeTarget && activeSwipeTarget._closeSwipe){activeSwipeTarget._closeSwipe();}
+  if(activeSwipeTarget && activeSwipeTarget._closeSwipe) activeSwipeTarget._closeSwipe();
   activeSwipeTarget=null;
 }
 
+// Robuste iPhone-/iPad-Wischfunktion. Der rote Button existiert im DOM,
+// ist aber inline vollständig verborgen und wird erst nach einem echten
+// horizontalen Wisch eingeblendet.
 function enableSwipeDelete(target,onDelete){
-  if(!target)return;
+  if(!target) return;
   target.classList.add('swipeTarget');
   const wrap=document.createElement('div');
   wrap.className='swipeWrap';
   const content=document.createElement('div');
   content.className='swipeContent';
   while(target.firstChild) content.append(target.firstChild);
+
   const del=document.createElement('button');
   del.type='button';
   del.className='swipeDelete';
   del.textContent='Löschen';
   del.setAttribute('aria-label','Löschen');
+  del.style.display='none';
+
   wrap.append(content,del);
   target.append(wrap);
 
-  const max=82;
+  const max=88;
   let startX=0,startY=0,currentX=0,dragging=false,horizontal=false,moved=false,suppressClick=false;
-  const setX=x=>{ currentX=Math.max(-max,Math.min(0,x)); content.style.transform=`translate3d(${currentX}px,0,0)`; };
-  const close=()=>{setX(0);target.classList.remove('swipeOpen');if(activeSwipeTarget===target)activeSwipeTarget=null;};
-  const open=()=>{if(activeSwipeTarget && activeSwipeTarget!==target && activeSwipeTarget._closeSwipe)activeSwipeTarget._closeSwipe();activeSwipeTarget=target;setX(-max);target.classList.add('swipeOpen');};
+  const setX=x=>{
+    currentX=Math.max(-max,Math.min(0,x));
+    content.style.transform=`translate3d(${currentX}px,0,0)`;
+  };
+  const close=()=>{
+    content.style.transition='transform .20s ease';
+    setX(0);
+    target.classList.remove('swipeOpen');
+    del.style.display='none';
+    setTimeout(()=>{content.style.transition='';},220);
+    if(activeSwipeTarget===target) activeSwipeTarget=null;
+  };
+  const open=()=>{
+    if(activeSwipeTarget && activeSwipeTarget!==target) activeSwipeTarget._closeSwipe?.();
+    activeSwipeTarget=target;
+    content.style.transition='transform .20s ease';
+    setX(-max);
+    target.classList.add('swipeOpen');
+    del.style.display='flex';
+    setTimeout(()=>{content.style.transition='';},220);
+  };
 
-  content.addEventListener('touchstart',e=>{
-    if(!e.touches?.[0])return;
-    const t=e.touches[0]; startX=t.clientX; startY=t.clientY;
+  content.addEventListener('pointerdown',e=>{
+    if(e.pointerType==='mouse' && e.button!==0) return;
+    startX=e.clientX; startY=e.clientY;
     dragging=true; horizontal=false; moved=false;
     content.style.transition='none';
-  },{passive:true});
+    try{content.setPointerCapture(e.pointerId);}catch(_){ }
+  });
 
-  content.addEventListener('touchmove',e=>{
-    if(!dragging||!e.touches?.[0])return;
-    const t=e.touches[0], dx=t.clientX-startX, dy=t.clientY-startY;
+  content.addEventListener('pointermove',e=>{
+    if(!dragging) return;
+    const dx=e.clientX-startX, dy=e.clientY-startY;
     if(!horizontal){
-      if(Math.abs(dx)<8 && Math.abs(dy)<8)return;
-      if(Math.abs(dy)>Math.abs(dx)){dragging=false;content.style.transition='';return;}
+      if(Math.abs(dx)<8 && Math.abs(dy)<8) return;
+      if(Math.abs(dy)>Math.abs(dx)){
+        dragging=false; content.style.transition=''; return;
+      }
       horizontal=true;
     }
-    if(horizontal){
-      e.preventDefault(); moved=true;
-      // Nur nach links öffnen; ein bereits geöffneter Eintrag darf zurückgewischt werden.
-      const base=target.classList.contains('swipeOpen') ? -max : 0;
-      setX(base+dx);
-    }
-  },{passive:false});
+    if(!horizontal) return;
+    moved=true;
+    e.preventDefault();
+    const base=target.classList.contains('swipeOpen') ? -max : 0;
+    setX(base+dx);
+  });
 
-  const finish=()=>{
-    if(!dragging)return;
-    dragging=false; content.style.transition='';
-    if(horizontal&&moved){
+  const finish=e=>{
+    if(!dragging) return;
+    dragging=false;
+    try{content.releasePointerCapture?.(e.pointerId);}catch(_){ }
+    content.style.transition='';
+    if(horizontal && moved){
       suppressClick=true;
-      if(currentX<=-max/2)open(); else close();
-      setTimeout(()=>suppressClick=false,350);
+      const dx=e.clientX-startX;
+      const opened=target.classList.contains('swipeOpen');
+      if((!opened && dx < -40) || (opened && dx > 40)){
+        if(opened) close(); else open();
+      }else if(!opened){
+        close();
+      }else{
+        setX(-max); del.style.display='flex';
+      }
+      setTimeout(()=>{suppressClick=false;},300);
     }
   };
-  content.addEventListener('touchend',finish,{passive:true});
-  content.addEventListener('touchcancel',()=>{dragging=false;content.style.transition='';close();},{passive:true});
-
-  // Auf Desktop zusätzlich Pointer unterstützen.
-  let pStartX=0,pStartY=0,pDragging=false,pHorizontal=false,pMoved=false;
-  content.addEventListener('pointerdown',e=>{
-    if(e.pointerType==='touch'||e.button!==0)return;
-    pStartX=e.clientX;pStartY=e.clientY;pDragging=true;pHorizontal=false;pMoved=false;
-    content.style.transition='none'; content.setPointerCapture?.(e.pointerId);
-  });
-  content.addEventListener('pointermove',e=>{
-    if(!pDragging)return;
-    const dx=e.clientX-pStartX,dy=e.clientY-pStartY;
-    if(!pHorizontal){
-      if(Math.abs(dx)<8&&Math.abs(dy)<8)return;
-      if(Math.abs(dy)>Math.abs(dx)){pDragging=false;content.style.transition='';return;}
-      pHorizontal=true;
-    }
-    if(pHorizontal){pMoved=true;setX(dx);}
-  });
-  content.addEventListener('pointerup',()=>{
-    if(!pDragging)return;pDragging=false;content.style.transition='';
-    if(pHorizontal&&pMoved){suppressClick=true;if(currentX<=-max/2)open();else close();setTimeout(()=>suppressClick=false,350);}
+  content.addEventListener('pointerup',finish);
+  content.addEventListener('pointercancel',e=>{
+    if(dragging){dragging=false;content.style.transition='';}
+    if(!target.classList.contains('swipeOpen')) close();
   });
 
+  // Wenn ein geöffneter Eintrag normal angetippt wird, wieder schließen.
   content.addEventListener('click',e=>{
-    if(suppressClick){e.preventDefault();e.stopPropagation();suppressClick=false;return;}
+    if(suppressClick){e.preventDefault();e.stopPropagation();return;}
     if(target.classList.contains('swipeOpen')){
       close();
-      e.preventDefault(); e.stopPropagation();
+      e.preventDefault();
+      e.stopPropagation();
     }
   },true);
 
   del.addEventListener('click',e=>{
-    e.stopPropagation();
-    if(confirm('Wirklich löschen?'))onDelete();else close();
+    e.preventDefault(); e.stopPropagation();
+    if(confirm('Wirklich löschen?')) onDelete(); else close();
   });
+
   target._closeSwipe=close;
   return {close};
 }
 
-document.addEventListener('touchstart',e=>{
-  if(!activeSwipeTarget)return;
-  if(!activeSwipeTarget.contains(e.target))closeActiveSwipe();
-},{passive:true});
+document.addEventListener('pointerdown',e=>{
+  if(!activeSwipeTarget) return;
+  if(!activeSwipeTarget.contains(e.target)) closeActiveSwipe();
+});
+
 document.addEventListener('click',e=>{
-  if(!activeSwipeTarget)return;
-  if(!activeSwipeTarget.contains(e.target))closeActiveSwipe();
+  if(!activeSwipeTarget) return;
+  if(!activeSwipeTarget.contains(e.target)) closeActiveSwipe();
 });
 
 function removeReport(index){

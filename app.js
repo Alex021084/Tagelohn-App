@@ -229,6 +229,62 @@ function setArchiveState(key,isOpen){
 function archiveKey(type,contractor,project=''){
   return type+'|'+String(contractor||'').trim()+'|'+String(project||'').trim();
 }
+
+// iPhone-/Touch-freundliches Wischen zum Löschen.
+// Nach links wischen zeigt eine rote Löschen-Schaltfläche. Erst ein Tipp auf
+// diese Schaltfläche löscht den Eintrag/Ordner, damit nichts versehentlich verloren geht.
+function enableSwipeDelete(target,onDelete){
+  if(!target)return;
+  target.classList.add('swipeTarget');
+  const wrap=document.createElement('div');
+  wrap.className='swipeWrap';
+  const content=document.createElement('div');
+  content.className='swipeContent';
+  while(target.firstChild)content.append(target.firstChild);
+  const del=document.createElement('button');
+  del.type='button'; del.className='swipeDelete'; del.textContent='Löschen';
+  del.setAttribute('aria-label','Löschen');
+  wrap.append(content,del); target.append(wrap);
+  let startX=0,startY=0,currentX=0,dragging=false,moved=false;
+  const max=92;
+  const setX=x=>{currentX=Math.max(-max,Math.min(0,x));content.style.transform=`translateX(${currentX}px)`;};
+  const close=()=>{setX(0);target.classList.remove('swipeOpen');};
+  const open=()=>{setX(-max);target.classList.add('swipeOpen');};
+  content.addEventListener('pointerdown',e=>{
+    if(e.button!==undefined && e.button!==0)return;
+    startX=e.clientX;startY=e.clientY;currentX=parseFloat((getComputedStyle(content).transform.match(/matrix\([^,]+,\s*(-?[\d.]+)/)||[])[1])||0;
+    dragging=true;moved=false;content.setPointerCapture?.(e.pointerId);
+  });
+  content.addEventListener('pointermove',e=>{
+    if(!dragging)return;
+    const dx=e.clientX-startX,dy=e.clientY-startY;
+    if(Math.abs(dy)>Math.abs(dx)+8){dragging=false;return;}
+    if(Math.abs(dx)>6)moved=true;
+    const base=currentX;
+    setX(Math.min(0,Math.max(-max,base+dx)));
+    startX=e.clientX;
+  });
+  content.addEventListener('pointerup',e=>{
+    if(!dragging)return; dragging=false;
+    if(moved){ if(currentX < -45) open(); else close(); }
+  });
+  content.addEventListener('pointercancel',()=>{dragging=false; if(currentX < -45)open(); else close();});
+  del.onclick=e=>{e.stopPropagation();if(confirm('Wirklich löschen?'))onDelete();else close();};
+  target._closeSwipe=close;
+  return {close};
+}
+function removeReport(index){
+  if(index<0||index>=reports.length)return;
+  reports.splice(index,1);save();render();
+}
+function removeProject(contractor,project){
+  reports=reports.filter(r=>(r.contractor||'Unbekannter Auftraggeber').trim()!==contractor || (r.project||'Ohne Bauvorhaben').trim()!==project);
+  save();render();
+}
+function removeContractor(contractor){
+  reports=reports.filter(r=>(r.contractor||'Unbekannter Auftraggeber').trim()!==contractor);
+  save();render();
+}
 function render(){
   const l=$('list');
   if(!reports.length){l.innerHTML='<div class="panel emptyState"><div class="emptyIcon">▤</div><b>Noch keine Nachweise</b><small>Gespeicherte Tagelohnnachweise erscheinen hier.</small></div>';return;}
@@ -257,9 +313,19 @@ function render(){
       items.sort((a,b)=>String(b.r.date||'').localeCompare(String(a.r.date||''))).forEach(({r,i})=>{
         const row=document.createElement('div');row.className='reportRow';const signed=!!r.signed;
         row.innerHTML=`<div class="reportMain"><strong>${esc(formatDate(r.date)||'Ohne Datum')}</strong><span class="reportStatus ${signed?'isSigned':'isDraft'}">${signed?'✓ Unterschrieben':'Entwurf'}</span></div><button type="button" class="openReport">Öffnen</button>`;
-        row.querySelector('.openReport').onclick=()=>{editingReportIndex=i;fill(r);show('editor');};pb.append(row);
-      });box.append(ph,pb);body.append(box);
-    });folder.append(head,body);l.append(folder);
+        row.querySelector('.openReport').onclick=()=>{editingReportIndex=i;fill(r);show('editor');};
+        // Einzelnen Nachweis nach links wischen -> nur diesen Nachweis löschen.
+        enableSwipeDelete(row,()=>removeReport(i));
+        pb.append(row);
+      });
+      // Baustellen-Ordner: nach links wischen -> alle Nachweise dieser Baustelle löschen.
+      enableSwipeDelete(ph,()=>removeProject(contractor,project));
+      box.append(ph,pb);body.append(box);
+    });
+    folder.append(head,body);l.append(folder);
+
+    // Auftraggeber-Ordner: nach links wischen -> kompletten Auftraggeber löschen.
+    enableSwipeDelete(head,()=>removeContractor(contractor));
   });
 }
 

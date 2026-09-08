@@ -249,83 +249,74 @@ function enableSwipeDelete(target,onDelete){
   wrap.append(content,del);
   target.append(wrap);
 
-  const max=96;
+  const max=82;
   let startX=0,startY=0,currentX=0,dragging=false,horizontal=false,moved=false,suppressClick=false;
-
-  const setX=x=>{
-    currentX=Math.max(-max,Math.min(0,x));
-    content.style.transform=`translate3d(${currentX}px,0,0)`;
-  };
+  const setX=x=>{ currentX=Math.max(-max,Math.min(0,x)); content.style.transform=`translate3d(${currentX}px,0,0)`; };
   const close=()=>{setX(0);target.classList.remove('swipeOpen');};
   const open=()=>{setX(-max);target.classList.add('swipeOpen');};
 
   content.addEventListener('touchstart',e=>{
-    if(!e.touches||!e.touches[0])return;
-    const t=e.touches[0];
-    startX=t.clientX; startY=t.clientY;
+    if(!e.touches?.[0])return;
+    const t=e.touches[0]; startX=t.clientX; startY=t.clientY;
     dragging=true; horizontal=false; moved=false;
+    content.style.transition='none';
   },{passive:true});
 
   content.addEventListener('touchmove',e=>{
-    if(!dragging||!e.touches||!e.touches[0])return;
-    const t=e.touches[0];
-    const dx=t.clientX-startX, dy=t.clientY-startY;
+    if(!dragging||!e.touches?.[0])return;
+    const t=e.touches[0], dx=t.clientX-startX, dy=t.clientY-startY;
     if(!horizontal){
-      if(Math.abs(dx)<7 && Math.abs(dy)<7)return;
-      if(Math.abs(dy)>Math.abs(dx)+5){dragging=false;return;}
+      if(Math.abs(dx)<8 && Math.abs(dy)<8)return;
+      if(Math.abs(dy)>Math.abs(dx)){dragging=false;content.style.transition='';return;}
       horizontal=true;
     }
     if(horizontal){
-      e.preventDefault();
-      moved=true;
-      // Beim Wischen wird immer relativ zur aktuellen Startposition gerechnet.
+      e.preventDefault(); moved=true;
+      // Nur nach links öffnen; ein bereits geöffneter Eintrag darf zurückgewischt werden.
       const base=target.classList.contains('swipeOpen') ? -max : 0;
-      setX(Math.max(-max,Math.min(0,base+dx)));
+      setX(base+dx);
     }
   },{passive:false});
 
   const finish=()=>{
     if(!dragging)return;
-    dragging=false;
+    dragging=false; content.style.transition='';
     if(horizontal&&moved){
       suppressClick=true;
-      if(currentX < -max/2) open(); else close();
-      window.setTimeout(()=>{suppressClick=false;},350);
+      if(currentX<=-max/2)open(); else close();
+      setTimeout(()=>suppressClick=false,350);
     }
   };
   content.addEventListener('touchend',finish,{passive:true});
-  content.addEventListener('touchcancel',()=>{dragging=false;if(currentX < -max/2)open();else close();},{passive:true});
+  content.addEventListener('touchcancel',()=>{dragging=false;content.style.transition='';close();},{passive:true});
 
-  // Desktop: zusätzlich Maus/Pointer unterstützen.
+  // Auf Desktop zusätzlich Pointer unterstützen.
   let pStartX=0,pStartY=0,pDragging=false,pHorizontal=false,pMoved=false;
   content.addEventListener('pointerdown',e=>{
-    if(e.pointerType==='touch')return;
-    if(e.button!==0)return;
+    if(e.pointerType==='touch'||e.button!==0)return;
     pStartX=e.clientX;pStartY=e.clientY;pDragging=true;pHorizontal=false;pMoved=false;
-    content.setPointerCapture?.(e.pointerId);
+    content.style.transition='none'; content.setPointerCapture?.(e.pointerId);
   });
   content.addEventListener('pointermove',e=>{
     if(!pDragging)return;
     const dx=e.clientX-pStartX,dy=e.clientY-pStartY;
     if(!pHorizontal){
-      if(Math.abs(dx)<7&&Math.abs(dy)<7)return;
-      if(Math.abs(dy)>Math.abs(dx)+5){pDragging=false;return;}
+      if(Math.abs(dx)<8&&Math.abs(dy)<8)return;
+      if(Math.abs(dy)>Math.abs(dx)){pDragging=false;content.style.transition='';return;}
       pHorizontal=true;
     }
-    if(pHorizontal){pMoved=true;setX(Math.max(-max,Math.min(0,dx)));}
+    if(pHorizontal){pMoved=true;setX(dx);}
   });
-  content.addEventListener('pointerup',e=>{
-    if(!pDragging)return;pDragging=false;
-    if(pHorizontal&&pMoved){suppressClick=true;if(currentX<-max/2)open();else close();window.setTimeout(()=>suppressClick=false,350);}
+  content.addEventListener('pointerup',()=>{
+    if(!pDragging)return;pDragging=false;content.style.transition='';
+    if(pHorizontal&&pMoved){suppressClick=true;if(currentX<=-max/2)open();else close();setTimeout(()=>suppressClick=false,350);}
   });
 
   content.addEventListener('click',e=>{
     if(suppressClick){e.preventDefault();e.stopPropagation();suppressClick=false;return;}
-    if(target.classList.contains('swipeOpen') && !e.target.closest('.swipeDelete')){
-      // Ein Tipp auf den Inhalt schließt einen geöffneten Löschbereich.
+    if(target.classList.contains('swipeOpen')){
       close();
-      e.preventDefault();
-      e.stopPropagation();
+      e.preventDefault(); e.stopPropagation();
     }
   },true);
 

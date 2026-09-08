@@ -215,7 +215,42 @@ function fill(r){
 }
 function collect(){return{date:$('date').value,contractor:contractorName(),address:$('address').value,project:$('project').value,client:$('client').value,employees:[...document.querySelectorAll('.employee')].map(d=>{const service=d.querySelector('.service').value;return {hours:+d.querySelector('.hours').value||0,service,activity:service,name:d.querySelector('.name').value,start:d.querySelector('.start').value,end:d.querySelector('.end').value,pause:+d.querySelector('.pause').value||0}}),works:[...document.querySelectorAll('#works input')].map(x=>x.value).filter(Boolean),materials:[...document.querySelectorAll('#materials input')].map(x=>x.value).filter(Boolean),signature:$('sig').toDataURL()}}
 function save(){localStorage.tagelohn=JSON.stringify(reports);$('count').textContent=reports.length+' Nachweis'+(reports.length==1?'':'e')}
-function render(){let l=$('list');l.innerHTML=reports.length?'':'<div class="panel">Noch keine Nachweise gespeichert.</div>';reports.forEach((r,i)=>{let d=document.createElement('div');d.className='archive';d.innerHTML=`<b>${esc(formatDate(r.date))}</b><br>${esc(r.project)}<small>${esc(r.contractor)}</small><br><button>Öffnen</button>`;d.querySelector('button').onclick=()=>{editingReportIndex=i;fill(r);show('editor')};l.append(d)})}
+function render(){
+  const l=$('list');
+  if(!reports.length){l.innerHTML='<div class="panel">Noch keine Nachweise gespeichert.</div>';return}
+  // Fertige Nachweise werden zuerst nach Auftraggeber und darunter nach Baustelle gruppiert.
+  const groups=new Map();
+  reports.forEach((r,i)=>{
+    const contractor=(r.contractor||'Unbekannter Auftraggeber').trim()||'Unbekannter Auftraggeber';
+    const project=(r.project||'Ohne Bauvorhaben').trim()||'Ohne Bauvorhaben';
+    if(!groups.has(contractor))groups.set(contractor,new Map());
+    if(!groups.get(contractor).has(project))groups.get(contractor).set(project,[]);
+    groups.get(contractor).get(project).push({r,i});
+  });
+  l.innerHTML='';
+  [...groups.entries()].sort((a,b)=>a[0].localeCompare(b[0],'de')).forEach(([contractor,projects])=>{
+    const folder=document.createElement('details');
+    folder.className='archiveFolder';
+    const total=[...projects.values()].reduce((n,a)=>n+a.length,0);
+    folder.open=true;
+    const summary=document.createElement('summary');
+    summary.innerHTML=`<span class="folderIcon">📁</span><span class="folderName">${esc(contractor)}</span><span class="folderCount">${total}</span>`;
+    folder.append(summary);
+    [...projects.entries()].sort((a,b)=>a[0].localeCompare(b[0],'de')).forEach(([project,items])=>{
+      const projectBox=document.createElement('div');projectBox.className='projectFolder';
+      projectBox.innerHTML=`<div class="projectTitle"><span>📂</span><b>${esc(project)}</b><small>${items.length} Nachweis${items.length===1?'':'e'}</small></div>`;
+      items.sort((a,b)=>String(b.r.date||'').localeCompare(String(a.r.date||'')));
+      items.forEach(({r,i})=>{
+        const d=document.createElement('div');d.className='archiveItem';
+        d.innerHTML=`<div><b>${esc(formatDate(r.date))}</b><small>${r.signed?'✓ Unterschrieben':'Entwurf'}</small></div><button>Öffnen</button>`;
+        d.querySelector('button').onclick=()=>{editingReportIndex=i;fill(r);show('editor')};
+        projectBox.append(d);
+      });
+      folder.append(projectBox);
+    });
+    l.append(folder);
+  });
+}
 
 function formatDate(iso){if(!iso)return '';let d=new Date(iso+'T12:00:00');return new Intl.DateTimeFormat('de-DE',{weekday:'long',day:'2-digit',month:'long',year:'numeric'}).format(d).replace(/^./,m=>m.toUpperCase())}
 function shortDate(iso){if(!iso)return '';let d=new Date(iso+'T12:00:00');return `${String(d.getDate()).padStart(2,'0')}.${String(d.getMonth()+1).padStart(2,'0')}.${d.getFullYear()}`}

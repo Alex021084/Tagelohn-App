@@ -164,7 +164,57 @@ function addEmp(e={}){
 function calc(d){let s=d.querySelector('.start').value,e=d.querySelector('.end').value,p=+(d.querySelector('.pause').value||0);if(s&&e){let a=s.split(':').map(Number),b=e.split(':').map(Number),m=b[0]*60+b[1]-a[0]*60-a[1]-p;if(m>=0)d.querySelector('.hours').value=(m/60).toFixed(2)}}
 function item(id,v=''){let d=document.createElement('div');d.className='item';d.innerHTML=`<input value="${esc(v)}"><button class="del">×</button>`;d.querySelector('button').onclick=()=>d.remove();$(id).append(d)}
 
-function clearSignature(){ctx.clearRect(0,0,c.width,c.height)}
+function openModal(id){
+  const m=$(id);
+  if(!m)return;
+  m.classList.add('open');
+  m.setAttribute('aria-hidden','false');
+  document.body.style.overflow='hidden';
+}
+function closeModal(id){
+  const m=$(id);
+  if(!m)return;
+  m.classList.remove('open');
+  m.setAttribute('aria-hidden','true');
+  if(!document.querySelector('.modal.open'))document.body.style.overflow='';
+}
+function hasSignature(){
+  const data=ctx.getImageData(0,0,c.width,c.height).data;
+  for(let i=3;i<data.length;i+=4) if(data[i]>10) return true;
+  return false;
+}
+function updateSignatureStatus(){
+  const s=$('signatureStatus');
+  if(!s)return;
+  const signed=hasSignature();
+  s.textContent=signed?'✓ Unterschrift vorhanden':'Noch nicht unterschrieben';
+  s.classList.toggle('signed',signed);
+}
+function summaryMoneyHours(){
+  return [...document.querySelectorAll('.employee')].reduce((sum,d)=>sum+(Number(d.querySelector('.hours')?.value)||0),0);
+}
+function renderSummary(){
+  const data=collect();
+  const total=summaryMoneyHours();
+  const rows=data.employees.filter(e=>e.name||e.service||e.hours||e.start||e.end||e.pause).map(e=>`
+    <tr><td>${esc(e.name||'—')}</td><td>${esc(e.service||'—')}</td><td>${(Number(e.hours)||0).toFixed(2).replace('.',',')} Std.</td><td>${esc(e.start||'—')}</td><td>${esc(e.end||'—')}</td><td>${e.pause?esc(String(e.pause))+' min':'—'}</td></tr>`).join('');
+  $('summaryContent').innerHTML=`
+    <div class="summaryBlock"><h3>Tagelohnnachweis</h3><div class="summaryMeta">
+      <div><b>Datum</b>${esc(formatDate(data.date)||'—')}</div>
+      <div><b>Auftraggeber</b>${esc(data.contractor||'—')}</div>
+      <div><b>Bauvorhaben</b>${esc(data.project||'—')}</div>
+      <div><b>Anschrift</b>${esc(data.address||'—').replaceAll('\n','<br>')}</div>
+    </div></div>
+    <div class="summaryBlock"><h3>Mitarbeiter und Leistungen</h3>
+      ${rows?`<div style="overflow:auto"><table class="summaryTable"><thead><tr><th>Mitarbeiter</th><th>Leistung</th><th>Stunden</th><th>Anfang</th><th>Ende</th><th>Pause</th></tr></thead><tbody>${rows}</tbody></table></div>`:'<div class="empty">Keine Mitarbeiter eingetragen.</div>'}
+      <div class="summaryTotal">Gesamtstunden: ${total.toFixed(2).replace('.',',')} Std.</div>
+    </div>
+    <div class="summaryBlock"><h3>Ausgeführte Arbeiten</h3>${data.works.length?`<ul class="summaryList">${data.works.map(v=>`<li>${esc(v)}</li>`).join('')}</ul>`:'<div class="empty">Keine Angaben.</div>'}</div>
+    <div class="summaryBlock"><h3>Material / sonstige Leistungen</h3>${data.materials.length?`<ul class="summaryList">${data.materials.map(v=>`<li>${esc(v)}</li>`).join('')}</ul>`:'<div class="empty">Keine Angaben.</div>'}</div>
+    <div class="summaryBlock"><h3>Unterschrift Auftraggeber</h3><div class="hint">Mit der Unterschrift bestätigt der Auftraggeber die oben angezeigten Angaben.</div></div>`;
+}
+
+function clearSignature(){ctx.clearRect(0,0,c.width,c.height); updateSignatureStatus()}
 function fill(r){
   $('date').value=r.date||today();
   renderCustomerSelect(r.contractor||'Dreyer Hochbau GmbH & Co. KG');
@@ -176,7 +226,7 @@ function fill(r){
   $('works').innerHTML='';(r.works||[]).forEach(v=>item('works',v));
   $('materials').innerHTML='';(r.materials||[]).forEach(v=>item('materials',v));
   clearSignature();
-  if(r.signature){let img=new Image();img.onload=()=>ctx.drawImage(img,0,0,c.width,c.height);img.src=r.signature;}
+  if(r.signature){let img=new Image();img.onload=()=>{ctx.drawImage(img,0,0,c.width,c.height);updateSignatureStatus()};img.src=r.signature;} else updateSignatureStatus();
 }
 function collect(){return{date:$('date').value,contractor:contractorName(),address:$('address').value,project:$('project').value,client:$('client').value,employees:[...document.querySelectorAll('.employee')].map(d=>{const service=d.querySelector('.service').value;return {hours:+d.querySelector('.hours').value||0,service,activity:service,name:d.querySelector('.name').value,start:d.querySelector('.start').value,end:d.querySelector('.end').value,pause:+d.querySelector('.pause').value||0}}),works:[...document.querySelectorAll('#works input')].map(x=>x.value).filter(Boolean),materials:[...document.querySelectorAll('#materials input')].map(x=>x.value).filter(Boolean),signature:$('sig').toDataURL()}}
 function save(){localStorage.tagelohn=JSON.stringify(reports);$('count').textContent=reports.length+' Nachweis'+(reports.length==1?'':'e')}
@@ -243,6 +293,6 @@ $('review').onclick=()=>{renderSummary();openModal('reviewModal')};
 $('closeReview').onclick=$('cancelReview').onclick=()=>closeModal('reviewModal');
 $('signNow').onclick=()=>{closeModal('reviewModal');openModal('signatureModal')};
 $('closeSignature').onclick=$('cancelSignature').onclick=()=>closeModal('signatureModal');
-$('saveSignature').onclick=()=>{if($('sig').toDataURL().length<=1000){alert('Bitte zuerst unterschreiben.');return}updateSignatureStatus();closeModal('signatureModal')};
+$('saveSignature').onclick=()=>{if(!hasSignature()){alert('Bitte zuerst unterschreiben.');return}updateSignatureStatus();closeModal('signatureModal')};
 $('reviewModal').onclick=e=>{if(e.target===$('reviewModal'))closeModal('reviewModal')};
 $('signatureModal').onclick=e=>{if(e.target===$('signatureModal'))closeModal('signatureModal')};

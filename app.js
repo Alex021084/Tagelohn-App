@@ -273,7 +273,7 @@ function enableSwipeDelete(target,onDelete){
   wrap.append(content,del);
   target.append(wrap);
 
-  const max=104;
+  const max=72;
   let startX=0,startY=0,currentX=0,dragging=false,horizontal=false,moved=false,suppressClick=false;
   const setX=x=>{
     currentX=Math.max(-max,Math.min(0,x));

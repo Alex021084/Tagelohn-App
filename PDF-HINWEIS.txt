@@ -1,0 +1,1 @@
+PDF-FIX: Verwendet die vom Benutzer gelieferte Originalvorlage. Die PDF wird mit useObjectStreams:false gespeichert und direkt heruntergeladen statt in einem neuen Tab geöffnet.

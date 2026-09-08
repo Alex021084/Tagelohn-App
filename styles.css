@@ -130,3 +130,8 @@ select{width:100%;margin-top:5px;padding:11px;border:1px solid #d5d5da;border-ra
 .serviceRow .swipeDeleteIcon{width:58px!important;height:46px!important;border-radius:15px!important}
 .serviceRow .swipeDeleteLabel{font-size:13px!important}
 @media(max-width:520px){.screen{padding:14px 16px}.manageIntro{margin-top:2px}.listPanel{padding-left:8px;padding-right:8px}.serviceRow .swipeContent{min-height:60px}.serviceRow .serviceEdit,.serviceRow .employeeEdit{font-size:16px!important}}
+
+/* Verwaltung: kompakter Speichern-Button statt Plus-Symbol */
+.saveManage{flex:0 0 auto;border:0;border-radius:12px;background:#0a84ff;color:#fff;padding:11px 18px;font-size:16px;font-weight:700;white-space:nowrap;min-height:44px;}
+.saveManage:active{transform:scale(.98)}
+@media(max-width:520px){.saveManage{padding:10px 16px;font-size:15px}.addBar{gap:8px}}

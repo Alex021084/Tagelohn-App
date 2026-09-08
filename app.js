@@ -224,10 +224,38 @@ function splitLines(text){return String(text||'').split(/\r?\n/).map(s=>s.trim()
 function fitText(font,text,maxWidth,startSize=10,minSize=7){let size=startSize;while(size>minSize && font.widthOfTextAtSize(text,size)>maxWidth)size-=.25;return size}
 function drawWrapped(page,font,text,x,y,maxWidth,size=9,lineGap=2,maxLines=8){let words=String(text||'').split(/\s+/).filter(Boolean),line='',lines=[];for(const word of words){let test=line?line+' '+word:word;if(font.widthOfTextAtSize(test,size)<=maxWidth)line=test;else{if(line)lines.push(line);line=word}}if(line)lines.push(line);lines=lines.slice(0,maxLines);lines.forEach((ln,i)=>page.drawText(ln,{x,y:y-i*(size+lineGap),size,font}));}
 
-async function createPdf(){
-  const data=collect(); if(!window.PDFLib){alert('PDF-Bibliothek konnte nicht geladen werden. Bitte Internetverbindung prüfen.');return}
+function cleanFilenamePart(value){
+  return String(value||'')
+    .replace(/\\/g,'-').replace(/[\\/:*?"<>|]/g,'-')
+    .replace(/\s+/g,' ').replace(/\s*-\s*/g,' - ')
+    .trim().replace(/^[.\s]+|[.\s]+$/g,'');
+}
+function cleanContractorName(value){
+  let s=String(value||'').trim();
+  // Rechtsformen nur am Ende entfernen.
+  s=s.replace(/\s*(GmbH\s*&\s*Co\.\s*KG|GmbH\s*&\s*Co\s*KG|GmbH|AG|UG(?:\s*\(haftungsbeschränkt\))?|e\.\s*K\.?|eK|KG|OHG|GbR|SE)\s*$/i,'');
+  return s.trim().replace(/[,&.\-\s]+$/,'');
+}
+function pdfFilename(data){
+  const customer=cleanFilenamePart(cleanContractorName(data.contractor))||'Auftraggeber';
+  const date=shortDate(data.date).slice(0,8); // TT.MM.JJ
+  const project=cleanFilenamePart(data.project)||'Bauvorhaben';
+  return `${customer} - ${date} - ${project}.pdf`;
+}
+
+async function createPdf(options={}){
+  const data=collect(); if(!window.PDFLib){alert('PDF-Bibliothek konnte nicht geladen werden. Bitte Internetverbindung prüfen.');return false}
   const btn=$('pdf');btn.disabled=true;btn.textContent='PDF wird erstellt …';
+  let fileHandle=null;
   try{
+    // Den nativen Speichern-Dialog möglichst früh öffnen, solange noch eine direkte
+    // Benutzeraktion vorliegt. Auf unterstützten Browsern kann der Kunde den Speicherort wählen.
+    if(options.askLocation && 'showSaveFilePicker' in window){
+      fileHandle=await window.showSaveFilePicker({
+        suggestedName:pdfFilename(data),
+        types:[{description:'PDF-Datei',accept:{'application/pdf':['.pdf']}}]
+      });
+    }
     const {PDFDocument,StandardFonts,rgb}=PDFLib;
     const bytes=await fetch('OriginalTemplate.pdf',{cache:'no-store'}).then(r=>{if(!r.ok)throw new Error('Vorlage nicht gefunden');return r.arrayBuffer()});
     const pdf=await PDFDocument.load(bytes); const page=pdf.getPages()[0]; const W=page.getWidth(),H=page.getHeight();
@@ -243,23 +271,22 @@ async function createPdf(){
     data.employees.slice(0,12).forEach((e,i)=>{const y=rowTop-i*rowStep,hours=(Number(e.hours)||0).toFixed(2).replace('.',',');if(hours!=='0,00')page.drawText(hours,{x:84,y,size:9.5,font:normal});if(e.service||e.activity)drawWrapped(page,normal,e.service||e.activity,145,y,92,9.2,1,2);if(e.name)page.drawText(e.name,{x:247,y,size:9.5,font:normal});if(e.start)page.drawText(e.start,{x:412,y,size:9.5,font:normal});if(e.end)page.drawText(e.end,{x:466,y,size:9.5,font:normal});if(Number(e.pause))page.drawText(String(e.pause),{x:517,y,size:9.5,font:normal})});
     const contentTop=H-565;data.works.slice(0,12).forEach((v,i)=>drawWrapped(page,normal,'• '+v,54,contentTop-i*14,285,9.2,1,2));data.materials.slice(0,12).forEach((v,i)=>drawWrapped(page,normal,'• '+v,355,contentTop-i*14,195,9.2,1,2));
     if(data.signature&&data.signature.length>100){const sigPng=await pdf.embedPng(data.signature);page.drawImage(sigPng,{x:54,y:70,width:190,height:70,opacity:1})}
-    // PDF mit maximaler Kompatibilität speichern (ohne Object Streams).
     const out=await pdf.save({useObjectStreams:false});
-    const blob=new Blob([out],{type:'application/pdf'});
-    const url=URL.createObjectURL(blob);
-    const filename='Tagelohnnachweis-'+shortDate(data.date).replaceAll('.','-')+'.pdf';
-    // Nicht mehr in einem neuen Browser-Tab öffnen: Das hat bei einigen PDF-Viewern
-    // zu einem schwarzen/blanken Bildschirm geführt. Stattdessen wird die fertige
-    // PDF direkt als Datei heruntergeladen.
-    const a=document.createElement('a');
-    a.href=url;
-    a.download=filename;
-    a.style.display='none';
-    document.body.appendChild(a);
-    a.click();
-    a.remove();
-    setTimeout(()=>URL.revokeObjectURL(url),60000);
-  }catch(err){console.error(err);alert('PDF konnte nicht erstellt werden: '+err.message)}finally{btn.disabled=false;btn.textContent='PDF erstellen'}
+    if(fileHandle){
+      const writable=await fileHandle.createWritable();
+      await writable.write(new Blob([out],{type:'application/pdf'}));
+      await writable.close();
+    }else{
+      const blob=new Blob([out],{type:'application/pdf'});
+      const url=URL.createObjectURL(blob);
+      const a=document.createElement('a');a.href=url;a.download=pdfFilename(data);a.style.display='none';document.body.appendChild(a);a.click();a.remove();
+      setTimeout(()=>URL.revokeObjectURL(url),60000);
+    }
+    return true;
+  }catch(err){
+    if(err?.name==='AbortError') return false;
+    console.error(err);alert('PDF konnte nicht erstellt/gespeichert werden: '+err.message);return false;
+  }finally{btn.disabled=false;btn.textContent='PDF erstellen'}
 }
 
 $('new').onclick=$('new2').onclick=()=>{editingReportIndex=null;fill({});show('editor')};
@@ -290,8 +317,8 @@ $('saveSignature').onclick=async()=>{
     if(editingReportIndex!==null && reports[editingReportIndex]) reports[editingReportIndex]=signed;
     else {reports.unshift(signed); editingReportIndex=0;}
     save(); render(); updateSignatureStatus();
-    await createPdf();
-    alert('Unterschrieben gespeichert und PDF erstellt.');
+    const pdfSaved=await createPdf({askLocation:true});
+    if(pdfSaved) alert('Unterschrieben gespeichert und PDF gespeichert.');
     show('archive');
   }catch(err){console.error(err);alert('Der unterschriebene Nachweis konnte nicht vollständig gespeichert werden: '+err.message)}
   finally{btn.disabled=false;btn.textContent='➜'}

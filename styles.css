@@ -89,7 +89,7 @@ select{width:100%;margin-top:5px;padding:11px;border:1px solid #d5d5da;border-ra
 
 /* iPhone-Wischaktionen: Löschbutton liegt versteckt hinter dem Eintrag und wird nur durch einen echten Wisch sichtbar. */
 .swipeTarget{position:relative;overflow:hidden;border-radius:inherit;}
-.swipeWrap{position:relative;width:100%;overflow:hidden;border-radius:inherit;background:#ff3b30;}
+.swipeWrap{position:relative;width:100%;overflow:hidden;border-radius:inherit;background:transparent;}
 .swipeContent{position:relative;z-index:2;width:100%;background:#fff;transition:transform .22s ease;touch-action:pan-y;will-change:transform;}
 .swipeDelete{position:absolute;z-index:1;right:0;top:0;bottom:0;width:82px;margin:0;padding:0;border:0;border-radius:0;background:#ff3b30;color:#fff;font-weight:700;font-size:14px;display:flex;align-items:center;justify-content:center;cursor:pointer;visibility:hidden;opacity:0;pointer-events:none;}
 .swipeTarget.swipeOpen .swipeDelete{visibility:visible;opacity:1;pointer-events:auto;}

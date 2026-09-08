@@ -233,6 +233,12 @@ function archiveKey(type,contractor,project=''){
 // iPhone-/Touch-freundliches Wischen zum Löschen.
 // Die rote Löschen-Aktion erscheint ERST nach einem echten Wisch nach links.
 // Es werden keine permanent sichtbaren Löschen-Buttons unter den Einträgen angezeigt.
+let activeSwipeTarget=null;
+function closeActiveSwipe(){
+  if(activeSwipeTarget && activeSwipeTarget._closeSwipe){activeSwipeTarget._closeSwipe();}
+  activeSwipeTarget=null;
+}
+
 function enableSwipeDelete(target,onDelete){
   if(!target)return;
   target.classList.add('swipeTarget');
@@ -252,8 +258,8 @@ function enableSwipeDelete(target,onDelete){
   const max=82;
   let startX=0,startY=0,currentX=0,dragging=false,horizontal=false,moved=false,suppressClick=false;
   const setX=x=>{ currentX=Math.max(-max,Math.min(0,x)); content.style.transform=`translate3d(${currentX}px,0,0)`; };
-  const close=()=>{setX(0);target.classList.remove('swipeOpen');};
-  const open=()=>{setX(-max);target.classList.add('swipeOpen');};
+  const close=()=>{setX(0);target.classList.remove('swipeOpen');if(activeSwipeTarget===target)activeSwipeTarget=null;};
+  const open=()=>{if(activeSwipeTarget && activeSwipeTarget!==target && activeSwipeTarget._closeSwipe)activeSwipeTarget._closeSwipe();activeSwipeTarget=target;setX(-max);target.classList.add('swipeOpen');};
 
   content.addEventListener('touchstart',e=>{
     if(!e.touches?.[0])return;
@@ -327,6 +333,15 @@ function enableSwipeDelete(target,onDelete){
   target._closeSwipe=close;
   return {close};
 }
+
+document.addEventListener('touchstart',e=>{
+  if(!activeSwipeTarget)return;
+  if(!activeSwipeTarget.contains(e.target))closeActiveSwipe();
+},{passive:true});
+document.addEventListener('click',e=>{
+  if(!activeSwipeTarget)return;
+  if(!activeSwipeTarget.contains(e.target))closeActiveSwipe();
+});
 
 function removeReport(index){
   if(index<0||index>=reports.length)return;

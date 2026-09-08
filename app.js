@@ -164,20 +164,6 @@ function addEmp(e={}){
 function calc(d){let s=d.querySelector('.start').value,e=d.querySelector('.end').value,p=+(d.querySelector('.pause').value||0);if(s&&e){let a=s.split(':').map(Number),b=e.split(':').map(Number),m=b[0]*60+b[1]-a[0]*60-a[1]-p;if(m>=0)d.querySelector('.hours').value=(m/60).toFixed(2)}}
 function item(id,v=''){let d=document.createElement('div');d.className='item';d.innerHTML=`<input value="${esc(v)}"><button class="del">×</button>`;d.querySelector('button').onclick=()=>d.remove();$(id).append(d)}
 
-function openModal(id){
-  const m=$(id);
-  if(!m)return;
-  m.classList.add('open');
-  m.setAttribute('aria-hidden','false');
-  document.body.style.overflow='hidden';
-}
-function closeModal(id){
-  const m=$(id);
-  if(!m)return;
-  m.classList.remove('open');
-  m.setAttribute('aria-hidden','true');
-  if(!document.querySelector('.modal.open'))document.body.style.overflow='';
-}
 function hasSignature(){
   const data=ctx.getImageData(0,0,c.width,c.height).data;
   for(let i=3;i<data.length;i+=4) if(data[i]>10) return true;
@@ -289,10 +275,9 @@ let c=$('sig'),ctx=c.getContext('2d'),down=false;
 c.onpointerdown=e=>{down=true;ctx.beginPath();let p=pos(e);ctx.moveTo(p.x,p.y)};c.onpointermove=e=>{if(!down)return;let p=pos(e);ctx.lineTo(p.x,p.y);ctx.stroke()};window.onpointerup=()=>down=false;
 function pos(e){let r=c.getBoundingClientRect();return{x:(e.clientX-r.left)*c.width/r.width,y:(e.clientY-r.top)*c.height/r.height}}
 $('clear').onclick=()=>{clearSignature();updateSignatureStatus()};
-$('review').onclick=()=>{renderSummary();openModal('reviewModal')};
-$('closeReview').onclick=$('cancelReview').onclick=()=>closeModal('reviewModal');
-$('signNow').onclick=()=>{closeModal('reviewModal');openModal('signatureModal')};
-$('closeSignature').onclick=$('cancelSignature').onclick=()=>closeModal('signatureModal');
-$('saveSignature').onclick=()=>{if(!hasSignature()){alert('Bitte zuerst unterschreiben.');return}updateSignatureStatus();closeModal('signatureModal')};
-$('reviewModal').onclick=e=>{if(e.target===$('reviewModal'))closeModal('reviewModal')};
-$('signatureModal').onclick=e=>{if(e.target===$('signatureModal'))closeModal('signatureModal')};
+$('review').onclick=()=>{renderSummary();show('summaryScreen')};
+$('backToEditorFromSummary').onclick=()=>show('editor');
+$('signNow').onclick=()=>{show('signatureScreen');updateSignatureStatus()};
+$('backToSummary').onclick=()=>{renderSummary();show('summaryScreen')};
+$('cancelSignature').onclick=()=>show('summaryScreen');
+$('saveSignature').onclick=()=>{if(!hasSignature()){alert('Bitte zuerst unterschreiben.');return}updateSignatureStatus();renderSummary();show('summaryScreen')};

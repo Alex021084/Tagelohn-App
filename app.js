@@ -217,41 +217,85 @@ function collect(){return{date:$('date').value,contractor:contractorName(),addre
 function save(){localStorage.tagelohn=JSON.stringify(reports);$('count').textContent=reports.length+' Nachweis'+(reports.length==1?'':'e')}
 function render(){
   const l=$('list');
-  if(!reports.length){l.innerHTML='<div class="panel">Noch keine Nachweise gespeichert.</div>';return}
-  // Fertige Nachweise werden zuerst nach Auftraggeber und darunter nach Baustelle gruppiert.
+  if(!reports.length){
+    l.innerHTML='<div class="panel emptyState"><div class="emptyIcon">▤</div><b>Noch keine Nachweise</b><small>Gespeicherte Tagelohnnachweise erscheinen hier.</small></div>';
+    return;
+  }
+
+  // Nachweise übersichtlich nach Auftraggeber → Bauvorhaben → Datum gruppieren.
   const groups=new Map();
   reports.forEach((r,i)=>{
     const contractor=(r.contractor||'Unbekannter Auftraggeber').trim()||'Unbekannter Auftraggeber';
     const project=(r.project||'Ohne Bauvorhaben').trim()||'Ohne Bauvorhaben';
-    if(!groups.has(contractor))groups.set(contractor,new Map());
-    if(!groups.get(contractor).has(project))groups.get(contractor).set(project,[]);
+    if(!groups.has(contractor)) groups.set(contractor,new Map());
+    if(!groups.get(contractor).has(project)) groups.get(contractor).set(project,[]);
     groups.get(contractor).get(project).push({r,i});
   });
-  l.innerHTML='';
-  [...groups.entries()].sort((a,b)=>a[0].localeCompare(b[0],'de')).forEach(([contractor,projects])=>{
-    const folder=document.createElement('details');
-    folder.className='archiveFolder';
-    const total=[...projects.values()].reduce((n,a)=>n+a.length,0);
-    folder.open=true;
-    const summary=document.createElement('summary');
-    summary.innerHTML=`<span class="folderIcon">📁</span><span class="folderName">${esc(contractor)}</span><span class="folderCount">${total}</span>`;
-    folder.append(summary);
-    [...projects.entries()].sort((a,b)=>a[0].localeCompare(b[0],'de')).forEach(([project,items])=>{
-      const projectBox=document.createElement('div');projectBox.className='projectFolder';
-      projectBox.innerHTML=`<div class="projectTitle"><span>📂</span><b>${esc(project)}</b><small>${items.length} Nachweis${items.length===1?'':'e'}</small></div>`;
-      items.sort((a,b)=>String(b.r.date||'').localeCompare(String(a.r.date||'')));
-      items.forEach(({r,i})=>{
-        const d=document.createElement('div');d.className='archiveItem';
-        d.innerHTML=`<div><b>${esc(formatDate(r.date))}</b><small>${r.signed?'✓ Unterschrieben':'Entwurf'}</small></div><button>Öffnen</button>`;
-        d.querySelector('button').onclick=()=>{editingReportIndex=i;fill(r);show('editor')};
-        projectBox.append(d);
-      });
-      folder.append(projectBox);
-    });
-    l.append(folder);
-  });
-}
 
+  l.innerHTML='';
+  [...groups.entries()]
+    .sort((a,b)=>a[0].localeCompare(b[0],'de'))
+    .forEach(([contractor,projects])=>{
+      const folder=document.createElement('details');
+      folder.className='archiveFolder';
+      folder.open=true;
+      const total=[...projects.values()].reduce((n,a)=>n+a.length,0);
+
+      const summary=document.createElement('summary');
+      summary.innerHTML=`
+        <span class="folderIcon">📁</span>
+        <span class="folderInfo"><b>${esc(contractor)}</b><small>${total} Nachweis${total===1?'':'e'}</small></span>
+        <span class="folderChevron">⌄</span>`;
+      folder.append(summary);
+
+      const projectWrap=document.createElement('div');
+      projectWrap.className='projectList';
+
+      [...projects.entries()]
+        .sort((a,b)=>a[0].localeCompare(b[0],'de'))
+        .forEach(([project,items])=>{
+          const projectBox=document.createElement('details');
+          projectBox.className='projectFolder';
+          projectBox.open=true;
+
+          const projectSummary=document.createElement('summary');
+          projectSummary.innerHTML=`
+            <span class="projectIcon">▰</span>
+            <span class="projectInfo"><b>${esc(project)}</b><small>${items.length} Nachweis${items.length===1?'':'e'}</small></span>
+            <span class="projectChevron">⌄</span>`;
+          projectBox.append(projectSummary);
+
+          const itemsWrap=document.createElement('div');
+          itemsWrap.className='archiveItems';
+          items.sort((a,b)=>String(b.r.date||'').localeCompare(String(a.r.date||'')));
+
+          items.forEach(({r,i})=>{
+            const d=document.createElement('div');
+            d.className='archiveItem';
+            const signed=!!r.signed;
+            d.innerHTML=`
+              <div class="archiveDate">
+                <b>${esc(formatDate(r.date))}</b>
+                <small>${signed?'Unterschrieben':'Entwurf'}</small>
+              </div>
+              <span class="statusBadge ${signed?'signed':'draft'}">${signed?'✓':'•'} ${signed?'Unterschrieben':'Entwurf'}</span>
+              <button type="button">Öffnen</button>`;
+            d.querySelector('button').onclick=()=>{
+              editingReportIndex=i;
+              fill(r);
+              show('editor');
+            };
+            itemsWrap.append(d);
+          });
+
+          projectBox.append(itemsWrap);
+          projectWrap.append(projectBox);
+        });
+
+      folder.append(projectWrap);
+      l.append(folder);
+    });
+}
 function formatDate(iso){if(!iso)return '';let d=new Date(iso+'T12:00:00');return new Intl.DateTimeFormat('de-DE',{weekday:'long',day:'2-digit',month:'long',year:'numeric'}).format(d).replace(/^./,m=>m.toUpperCase())}
 function shortDate(iso){if(!iso)return '';let d=new Date(iso+'T12:00:00');return `${String(d.getDate()).padStart(2,'0')}.${String(d.getMonth()+1).padStart(2,'0')}.${d.getFullYear()}`}
 

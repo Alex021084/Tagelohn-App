@@ -1,3 +1,4 @@
+// UI-FIX-2026-09-08-NO-DOTS
 const $=x=>document.getElementById(x);
 let reports=JSON.parse(localStorage.tagelohn||'[]');
 let editingReportIndex=null;

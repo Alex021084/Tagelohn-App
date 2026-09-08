@@ -125,7 +125,6 @@ select{width:100%;margin-top:5px;padding:11px;border:1px solid #d5d5da;border-ra
 .serviceRow .swipeWrap{border-radius:14px!important}
 .serviceRow .swipeContent{border:1px solid #ececf0;border-radius:14px!important;min-height:62px;display:flex;align-items:center;padding:0 12px!important}
 .serviceRow .serviceEdit,.serviceRow .employeeEdit{border:0!important;border-radius:0!important;background:transparent!important;padding:12px 8px 12px 4px!important;margin:0!important;font-size:17px!important;outline:none;box-shadow:none!important}
-.serviceRow::before{content:'';width:28px;height:28px;border-radius:9px;background:#eef4ff;color:#0a84ff;display:grid;place-items:center;font-size:20px;flex:0 0 28px;position:relative;z-index:3;pointer-events:none}
 .serviceRow .swipeDelete{width:96px!important}
 .serviceRow .swipeDeleteIcon{width:58px!important;height:46px!important;border-radius:15px!important}
 .serviceRow .swipeDeleteLabel{font-size:13px!important}

@@ -316,3 +316,13 @@ body { touch-action: manipulation; }
   #dateDisplay,#projectSelect{height:54px;min-height:54px;font-size:18px!important}
   .timeSelect{min-height:54px;font-size:18px!important}
 }
+
+/* FIX22: Mehr Abstand zwischen den Verwaltungsfeldern auf Tablets */
+@media (min-width: 521px){
+  #serviceList .serviceRow,#employeeList .serviceRow{
+    margin:0 0 12px 0!important;
+  }
+  #serviceList .serviceRow + .serviceRow,#employeeList .serviceRow + .serviceRow{
+    margin-top:0!important;
+  }
+}

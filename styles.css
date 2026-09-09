@@ -237,3 +237,8 @@ html { -webkit-text-size-adjust: 100%; }
 
 /* FIX8: Prevent iPhone Safari auto-zoom on project textarea */
 #project { font-size:16px !important; line-height:1.35; }
+
+/* FIX9: iPhone Safari darf beim Fokussieren von Eingabefeldern nicht zoomen. */
+html { -webkit-text-size-adjust: 100%; text-size-adjust: 100%; }
+body { touch-action: manipulation; }
+#project { font-size: 16px !important; -webkit-text-size-adjust: 100%; }

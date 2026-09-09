@@ -95,7 +95,7 @@ function renderProjectSelect(selectedProject=''){
   const id=$('contractorSelect')?.value;
   const c=customers.find(x=>x.id===id);
   const projects=Array.isArray(c?.projects)?c.projects:[];
-  select.innerHTML='<option value="">— Bauvorhaben auswählen —</option>'+projects.map(p=>`<option value="${esc(p)}">${esc(p)}</option>`).join('')+'<option value="__manual__">＋ Neues Bauvorhaben eingeben</option>';
+  select.innerHTML='<option value=""></option>'+projects.map(p=>`<option value="${esc(p)}">${esc(p)}</option>`).join('')+'<option value="__manual__">＋ Neues Bauvorhaben eingeben</option>';
   if(selectedProject&&projects.includes(selectedProject)){select.value=selectedProject;manual.value=selectedProject;manual.style.display='none';}
   else if(selectedProject){select.value='__manual__';manual.value=selectedProject;manual.style.display='block';}
   else {select.value='';manual.value='';manual.style.display=projects.length?'none':'block';}

@@ -41,16 +41,17 @@ function renderServices(){
   const l=$('serviceList'); l.innerHTML='';
   services.forEach((name,i)=>{
     const d=document.createElement('div'); d.className='serviceRow';
-    d.innerHTML=`<input class="serviceEdit" value="${esc(name)}"><div class="serviceActions"><button class="serviceSave">Speichern</button><button class="del serviceDel">Löschen</button></div>`;
-    d.querySelector('.serviceSave').onclick=()=>{
-      const value=d.querySelector('.serviceEdit').value.trim();
-      if(!value){alert('Bitte eine Bezeichnung eingeben.');return}
-      if(services.some((s,j)=>j!==i&&s.toLowerCase()===value.toLowerCase())){alert('Diese Leistung gibt es bereits.');return}
-      services[i]=value;persistServices();renderServices();
+    d.innerHTML=`<input class="serviceEdit" value="${esc(name)}" aria-label="Leistung">`;
+    const input=d.querySelector('.serviceEdit');
+    const saveEdit=()=>{
+      const value=input.value.trim();
+      if(!value || value===services[i]) return;
+      if(services.some((x,j)=>j!==i&&x.toLowerCase()===value.toLowerCase())){input.value=services[i];alert('Diese Leistung gibt es bereits.');return;}
+      services[i]=value; persistServices();
     };
-    d.querySelector('.serviceDel').onclick=()=>{
-      if(confirm('Leistung wirklich löschen?')){services.splice(i,1);persistServices();renderServices();}
-    };
+    input.addEventListener('change',saveEdit);
+    input.addEventListener('blur',saveEdit);
+    enableSwipeDelete(d,()=>{services.splice(i,1);persistServices();renderServices();});
     l.append(d);
   });
   if(!services.length)l.innerHTML='<div class="empty">Noch keine Leistungen angelegt.</div>';
@@ -119,16 +120,17 @@ function renderEmployees(){
   const l=$('employeeList'); l.innerHTML='';
   employees.forEach((name,i)=>{
     const d=document.createElement('div'); d.className='serviceRow';
-    d.innerHTML=`<input class="employeeEdit" value="${esc(name)}"><div class="serviceActions"><button class="employeeSave">Speichern</button><button class="del employeeDel">Löschen</button></div>`;
-    d.querySelector('.employeeSave').onclick=()=>{
-      const value=d.querySelector('.employeeEdit').value.trim();
-      if(!value){alert('Bitte einen Namen eingeben.');return}
-      if(employees.some((e,j)=>j!==i&&e.toLowerCase()===value.toLowerCase())){alert('Diesen Mitarbeiter gibt es bereits.');return}
-      employees[i]=value;persistEmployees();renderEmployees();
+    d.innerHTML=`<input class="employeeEdit" value="${esc(name)}" aria-label="Mitarbeiter">`;
+    const input=d.querySelector('.employeeEdit');
+    const saveEdit=()=>{
+      const value=input.value.trim();
+      if(!value || value===employees[i]) return;
+      if(employees.some((x,j)=>j!==i&&x.toLowerCase()===value.toLowerCase())){input.value=employees[i];alert('Diesen Mitarbeiter gibt es bereits.');return;}
+      employees[i]=value; persistEmployees();
     };
-    d.querySelector('.employeeDel').onclick=()=>{
-      if(confirm('Mitarbeiter wirklich löschen?')){employees.splice(i,1);persistEmployees();renderEmployees();}
-    };
+    input.addEventListener('change',saveEdit);
+    input.addEventListener('blur',saveEdit);
+    enableSwipeDelete(d,()=>{employees.splice(i,1);persistEmployees();renderEmployees();});
     l.append(d);
   });
   if(!employees.length)l.innerHTML='<div class="empty">Noch keine Mitarbeiter angelegt.</div>';

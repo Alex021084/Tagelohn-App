@@ -229,3 +229,8 @@ select{width:100%;margin-top:5px;padding:11px;border:1px solid #d5d5da;border-ra
 #serviceList .serviceRow + .serviceRow,#employeeList .serviceRow + .serviceRow{margin-top:3px!important}
 .addBar{display:flex!important;flex-direction:column!important;align-items:stretch!important;gap:8px!important}
 .saveManage{width:100%!important;min-height:52px!important}
+
+/* iPhone Safari: prevent automatic focus zoom on form controls */
+input, select, textarea, button { font-size: 16px; }
+input::placeholder, textarea::placeholder { font-size: 16px; }
+html { -webkit-text-size-adjust: 100%; }

@@ -171,7 +171,7 @@ function addEmp(e={}){
   <label>Name des Mitarbeiters<select class="name" aria-label="Mitarbeiter auswählen">${employeeOptions(e.name||'')}</select></label>
   <div class="grid"><label>Leistung<select class="service" aria-label="Leistung für Mitarbeiter auswählen">${serviceOptions(selectedService)}</select></label>
   <label>Stunden<input class="hours" type="number" step=".25" value="${e.hours??0}"></label></div>
-  <div class="grid grid3"><label>Anfang<input class="start" type="time" value="${e.start||''}"></label><label>Ende<input class="end" type="time" value="${e.end||''}"></label><label>Pause<input class="pause" type="number" value="${e.pause??0}"></label></div>`;
+  <div class="grid grid3"><label>Anfang<input class="start" type="time" step="900" value="${e.start||''}"></label><label>Ende<input class="end" type="time" step="900" value="${e.end||''}"></label><label>Pause<input class="pause" type="number" value="${e.pause??0}"></label></div>`;
   d.querySelector('.del').onclick=()=>d.remove();
   ['start','end','pause'].forEach(c=>d.querySelector('.'+c).oninput=()=>calc(d));
   $('employees').append(d);

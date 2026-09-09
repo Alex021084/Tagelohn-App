@@ -234,3 +234,6 @@ select{width:100%;margin-top:5px;padding:11px;border:1px solid #d5d5da;border-ra
 input, select, textarea, button { font-size: 16px; }
 input::placeholder, textarea::placeholder { font-size: 16px; }
 html { -webkit-text-size-adjust: 100%; }
+
+/* FIX8: Prevent iPhone Safari auto-zoom on project textarea */
+#project { font-size:16px !important; line-height:1.35; }

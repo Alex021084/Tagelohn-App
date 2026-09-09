@@ -288,10 +288,36 @@ function renderSummary(){
 
 function clearSignature(){ctx.clearRect(0,0,c.width,c.height); updateSignatureStatus()}
 function fill(r){
-  // Neuer Tagelohn startet leer; vorhandene Nachweise werden vollständig geladen.
+  // Neuer Tagelohn muss IMMER mit einem komplett leeren Formular starten.
+  // Die gespeicherten Kunden/Projekte bleiben erhalten, werden aber nicht als
+  // zuletzt verwendete Auswahl in einen neuen Nachweis übernommen.
   const isNew=!r || Object.keys(r).length===0;
-  $('date').value=r.date||today();
+  $('date').value=isNew?today():(r.date||today());
   syncDateDisplay();
+
+  if(isNew){
+    renderCustomerSelect('');
+    const contractor=$('contractorSelect');
+    contractor.value='';
+    contractor.dataset.manualName='';
+    $('address').value='';
+    $('project').value='';
+    $('client').value='';
+    $('employees').innerHTML='';
+    $('works').innerHTML='';
+    $('materials').innerHTML='';
+    // Kein alter Bauvorhaben-Text und keine alte Auswahl übernehmen.
+    const projectSelect=$('projectSelect');
+    if(projectSelect){
+      projectSelect.innerHTML='<option value=""></option><option value="__manual__">＋ Neues Bauvorhaben eingeben</option>';
+      projectSelect.value='';
+    }
+    $('project').style.display='block';
+    clearSignature();
+    updateSignatureStatus();
+    return;
+  }
+
   renderCustomerSelect(r.contractor||'');
   $('contractorSelect').dataset.manualName=r.contractor||'';
   $('address').value=r.address||'';

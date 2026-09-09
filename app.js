@@ -213,7 +213,7 @@ function employeeOptions(selected=''){
 function serviceOptions(selected=''){
   const current=String(selected||'');
   const options=services.map(s=>`<option value="${esc(s)}"${s===current?' selected':''}>${esc(s)}</option>`).join('');
-  return '<option value="">- Leistung -</option>'+options;
+  return '<option value="">'+'- Leistung -'+'</option>'+options;
 }
 function timeOptions(selected=''){
   let value=String(selected||'');

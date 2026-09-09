@@ -64,6 +64,18 @@ function addService(){
 }
 function show(id){document.querySelectorAll('.screen').forEach(x=>x.classList.remove('active'));$(id).classList.add('active');scrollTo(0,0)}
 function today(){return new Date().toISOString().slice(0,10)}
+function formatLongDate(value){
+  if(!value)return '';
+  const m=String(value).match(/^(\d{4})-(\d{2})-(\d{2})$/);
+  if(!m)return formatDate(value)||value;
+  const d=new Date(Number(m[1]),Number(m[2])-1,Number(m[3]));
+  const weekdays=['Sonntag','Montag','Dienstag','Mittwoch','Donnerstag','Freitag','Samstag'];
+  return `${weekdays[d.getDay()]}, ${m[3]}.${m[2]}.${m[1]}`;
+}
+function syncDateDisplay(){
+  const date=$('date'), display=$('dateDisplay');
+  if(date&&display) display.value=formatLongDate(date.value);
+}
 function esc(v){return String(v??'').replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;').replaceAll('"','&quot;')}
 
 function renderCustomerSelect(selectedName=''){
@@ -204,6 +216,7 @@ function renderSummary(){
 function clearSignature(){ctx.clearRect(0,0,c.width,c.height); updateSignatureStatus()}
 function fill(r){
   $('date').value=r.date||today();
+  syncDateDisplay();
   renderCustomerSelect(r.contractor||'Dreyer Hochbau GmbH & Co. KG');
   $('contractorSelect').dataset.manualName=r.contractor||'';
   $('address').value=r.address||'Mühlenberg 12\n27404 Elsdorf';
@@ -442,6 +455,8 @@ $('archiveBtn').onclick=()=>{render();show('archive')};$('homeBtn').onclick=()=>
 $('manageCustomers').onclick=openCustomers;$('addCustomer').onclick=addCustomer;$('contractorSelect').onchange=customerChanged;$('servicesBtn').onclick=openServices;$('homeFromServices').onclick=()=>show('home');$('addService').onclick=addService;$('employeesBtn').onclick=openEmployees;$('homeFromEmployees').onclick=()=>show('home');$('addEmployee').onclick=addEmployee;
 $('save').onclick=()=>{reports.unshift(collect());save();render();show('archive')};$('pdf').onclick=createPdf;
 document.querySelectorAll('nav button').forEach(b=>b.onclick=()=>show(b.dataset.s));
+$('date').addEventListener('change',syncDateDisplay);
+syncDateDisplay();
 persistCustomers();persistServices();persistEmployees();renderCustomerSelect('');save();
 
 let c=$('sig'),ctx=c.getContext('2d'),down=false;

@@ -2,7 +2,7 @@
 <html lang="de"><head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
 <meta name="theme-color" content="#0a84ff"><link rel="manifest" href="manifest.json"><title>Tagelohnnachweis</title>
-<link rel="stylesheet" href="styles.css?v=clean7"></head><body>
+<link rel="stylesheet" href="styles.css?v=clean8"></head><body>
 <header><div><small>Baustelle</small><h1>Tagelohnnachweis</h1></div><button id="new">＋</button></header>
 <main>
 <section id="home" class="screen active"><button id="new2" class="primary big">＋ Neuer Tagelohnnachweis</button>
@@ -26,7 +26,7 @@
 <section id="editor" class="screen">
 <div class="steps">1 Kopf · 2 Mitarbeiter · 3 Arbeiten · 4 Unterschrift · 5 PDF</div>
 <div class="panel"><h2>Kopfdaten</h2>
-<label>Datum<input id="date" type="date"></label>
+<label class="dateField">Datum<div class="dateInputWrap"><input id="dateDisplay" type="text" readonly aria-label="Datum"><input id="date" type="date" class="nativeDatePicker" aria-label="Datum auswählen"></div></label>
 <label>Auftraggeber<select id="contractorSelect"></select></label>
 <button id="manageCustomers" class="titleBtn">＋ Kunden verwalten</button>
 <label>Anschrift<textarea id="address"></textarea></label>
@@ -69,4 +69,4 @@
 </main>
 <nav><button data-s="home">⌂<small>Start</small></button><button data-s="archive">▤<small>Nachweise</small></button><button data-s="editor">＋<small>Neu</small></button></nav>
 <script src="https://unpkg.com/pdf-lib@1.17.1/dist/pdf-lib.min.js"></script>
-<script src="app.js?v=20260909-filename26-fix6"></script></body></html>
+<script src="app.js?v=20260909-filename26-fix7"></script></body></html>

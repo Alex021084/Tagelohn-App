@@ -182,6 +182,10 @@ function timeOptions(selected=''){
   }
   return html;
 }
+function pauseOptions(selected=0){
+  const value=String(selected ?? 0);
+  return `<option value="0"${value==='0'?' selected':''}>Keine Pause</option><option value="15"${value==='15'?' selected':''}>15 Minuten</option><option value="30"${value==='30'?' selected':''}>30 Minuten</option><option value="45"${value==='45'?' selected':''}>45 Minuten</option>`;
+}
 function addEmp(e={}){
   const selectedService=e.service||e.activity||'';
   const d=document.createElement('div'); d.className='employee';
@@ -189,7 +193,7 @@ function addEmp(e={}){
   <label>Name des Mitarbeiters<select class="name" aria-label="Mitarbeiter auswählen">${employeeOptions(e.name||'')}</select></label>
   <div class="grid"><label>Leistung<select class="service" aria-label="Leistung für Mitarbeiter auswählen">${serviceOptions(selectedService)}</select></label>
   <label>Stunden<input class="hours" type="number" step=".25" value="${e.hours??0}"></label></div>
-  <div class="grid grid3"><label>Anfang<select class="start timeSelect" aria-label="Anfang auswählen">${timeOptions(e.start||'')}</select></label><label>Ende<select class="end timeSelect" aria-label="Ende auswählen">${timeOptions(e.end||'')}</select></label><label>Pause<input class="pause" type="number" value="${e.pause??0}"></label></div>`;
+  <div class="grid grid3"><label>Anfang<select class="start timeSelect" aria-label="Anfang auswählen">${timeOptions(e.start||'')}</select></label><label>Ende<select class="end timeSelect" aria-label="Ende auswählen">${timeOptions(e.end||'')}</select></label><label>Pause<select class="pause" aria-label="Pause auswählen">${pauseOptions(e.pause??0)}</select></label></div>`;
   d.querySelector('.del').onclick=()=>d.remove();
   ['start','end','pause'].forEach(c=>d.querySelector('.'+c).oninput=()=>calc(d));
   $('employees').append(d);

@@ -288,13 +288,15 @@ function renderSummary(){
 
 function clearSignature(){ctx.clearRect(0,0,c.width,c.height); updateSignatureStatus()}
 function fill(r){
+  // Neuer Tagelohn startet leer; vorhandene Nachweise werden vollständig geladen.
+  const isNew=!r || Object.keys(r).length===0;
   $('date').value=r.date||today();
   syncDateDisplay();
-  renderCustomerSelect(r.contractor||'Dreyer Hochbau GmbH & Co. KG');
+  renderCustomerSelect(r.contractor||'');
   $('contractorSelect').dataset.manualName=r.contractor||'';
-  $('address').value=r.address||'Mühlenberg 12\n27404 Elsdorf';
-  $('project').value=r.project||'Rohrleitungsarbeiten Betriebsgelände Elsdorf';
-  renderProjectSelect(r.project||'Rohrleitungsarbeiten Betriebsgelände Elsdorf');
+  $('address').value=r.address||'';
+  $('project').value=r.project||'';
+  renderProjectSelect(r.project||'');
   $('client').value=r.client||'';
   $('employees').innerHTML='';(r.employees||[]).forEach(addEmp);
   $('works').innerHTML='';(r.works||[]).forEach(v=>item('works',v));

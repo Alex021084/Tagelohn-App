@@ -361,9 +361,16 @@ function cleanContractorName(value){
 }
 function pdfFilename(data){
   const customer=cleanFilenamePart(cleanContractorName(data.contractor))||'Auftraggeber';
-  const fullDate=shortDate(data.date);
-  const dateParts=fullDate.split('.');
-  const date=dateParts.length===3 ? `${dateParts[0]}.${dateParts[1]}.${dateParts[2].slice(-2)}` : fullDate; // TT.MM.JJ
+  const raw=String(data.date||'').trim();
+  // HTML-Datumsfeld: YYYY-MM-DD. Das Jahr wird vollständig aus dem ausgewählten Datum gelesen.
+  let date='';
+  const m=raw.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+  if(m){date=`${m[3]}.${m[2]}.${m[1].slice(-2)}`;}
+  else {
+    const fullDate=shortDate(raw);
+    const parts=fullDate.split('.');
+    date=parts.length===3 ? `${parts[0]}.${parts[1]}.${parts[2].slice(-2)}` : fullDate;
+  }
   const project=cleanFilenamePart(data.project)||'Bauvorhaben';
   return `${customer} - ${date} - ${project}.pdf`;
 }

@@ -463,7 +463,22 @@ function pdfFilename(data){
 }
 
 async function createPdf(options={}){
-  const data=collect(); if(!window.PDFLib){alert('PDF-Bibliothek konnte nicht geladen werden. Bitte Internetverbindung prüfen.');return false}
+  const data=collect();
+  // Auch beim direkten Erstellen einer PDF wird der aktuelle Nachweis in der
+  // App gespeichert. So bleibt er unter "Nachweise" erhalten, unabhängig
+  // davon, ob der Benutzer den anschließenden Datei-Speicherdialog abbricht.
+  if(options.saveReport!==false){
+    if(editingReportIndex!==null && reports[editingReportIndex]){
+      const previous=reports[editingReportIndex];
+      reports[editingReportIndex]={...previous,...data};
+    }else{
+      reports.unshift(data);
+      editingReportIndex=0;
+    }
+    save();
+    render();
+  }
+  if(!window.PDFLib){alert('PDF-Bibliothek konnte nicht geladen werden. Bitte Internetverbindung prüfen.');return false}
   const btn=$('pdf');btn.disabled=true;btn.textContent='PDF wird erstellt …';
   let fileHandle=null;
   try{
@@ -527,7 +542,7 @@ $('new').onclick=$('new2').onclick=()=>{editingReportIndex=null;fill({});show('e
 $('addEmp').onclick=()=>addEmp();$('addWork').onclick=()=>item('works');$('addMat').onclick=()=>item('materials');
 $('archiveBtn').onclick=()=>{render();show('archive')};$('homeBtn').onclick=()=>show('home');$('customersBtn').onclick=openCustomers;$('homeFromCustomers').onclick=()=>show('home');
 $('manageCustomers').onclick=openCustomers;$('addCustomer').onclick=addCustomer;$('contractorSelect').onchange=customerChanged;$('projectSelect').onchange=projectChanged;$('projectCustomerSelect').onchange=renderProjectList;$('addProject').onclick=addProject;$('servicesBtn').onclick=openServices;$('homeFromServices').onclick=()=>show('home');$('addService').onclick=addService;$('employeesBtn').onclick=openEmployees;$('homeFromEmployees').onclick=()=>show('home');$('addEmployee').onclick=addEmployee;
-$('save').onclick=()=>{reports.unshift(collect());save();render();show('archive')};$('pdf').onclick=()=>createPdf({askLocation:true});
+$('save').onclick=()=>{reports.unshift(collect());save();render();show('archive')};$('pdf').onclick=()=>createPdf({askLocation:true,saveReport:true});
 document.querySelectorAll('nav button').forEach(b=>b.onclick=()=>show(b.dataset.s));
 $('date').addEventListener('change',syncDateDisplay);
 syncDateDisplay();

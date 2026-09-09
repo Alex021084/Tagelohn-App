@@ -180,3 +180,52 @@ select{width:100%;margin-top:5px;padding:11px;border:1px solid #d5d5da;border-ra
 .addBar input{flex:1!important;min-width:0!important;width:auto!important}
 .saveManage{width:100%!important;min-height:52px!important;border-radius:14px!important}
 @media(max-width:520px){.serviceRow{height:56px!important;margin:3px 0!important}.serviceRow .swipeWrap,.serviceRow .swipeContent{height:56px!important}.serviceRow .serviceEdit,.serviceRow .employeeEdit{height:54px!important;min-height:54px!important;line-height:54px!important;font-size:16px!important}.serviceRow .swipeDelete{width:48px!important;height:48px!important;top:4px!important;right:4px!important}.serviceRow .swipeDeleteIcon{width:40px!important;height:40px!important;border-radius:12px!important;font-size:28px!important}.addBar{display:flex!important;flex-direction:column!important;align-items:stretch!important;gap:10px!important}.saveManage{width:100%!important}}
+
+
+/* FINAL CLEAN SWIPE UI - Verwaltung */
+#serviceList,#employeeList{display:block!important}
+#serviceList .serviceRow,#employeeList .serviceRow{
+  position:relative!important; display:block!important; width:100%!important;
+  height:56px!important; min-height:56px!important; margin:3px 0!important; padding:0!important;
+  overflow:hidden!important; border:0!important; background:transparent!important; border-radius:12px!important;
+}
+#serviceList .serviceRow .swipeWrap,#employeeList .serviceRow .swipeWrap{
+  position:relative!important; display:block!important; width:100%!important; height:56px!important;
+  margin:0!important; padding:0!important; overflow:hidden!important; background:transparent!important; border:0!important;
+}
+#serviceList .serviceRow .swipeContent,#employeeList .serviceRow .swipeContent{
+  position:relative!important; z-index:2!important; display:flex!important; align-items:center!important;
+  width:100%!important; height:56px!important; min-height:56px!important; margin:0!important; padding:0 8px!important;
+  background:#fff!important; border:1px solid #e4e4e8!important; border-radius:12px!important;
+  box-shadow:none!important; transform:translate3d(0,0,0); transition:transform .18s ease!important;
+}
+#serviceList .serviceRow .serviceEdit,#serviceList .serviceRow .employeeEdit,
+#employeeList .serviceRow .serviceEdit,#employeeList .serviceRow .employeeEdit{
+  display:block!important; flex:1 1 auto!important; width:100%!important; height:54px!important;
+  margin:0!important; padding:0 8px!important; border:0!important; outline:0!important; box-shadow:none!important;
+  background:#fff!important; color:#111!important; border-radius:11px!important; font:inherit!important;
+  font-size:16px!important; line-height:54px!important; -webkit-appearance:none!important; appearance:none!important;
+}
+#serviceList .serviceRow .swipeDelete,#employeeList .serviceRow .swipeDelete{
+  position:absolute!important; z-index:1!important; right:4px!important; top:4px!important;
+  width:48px!important; height:48px!important; min-width:48px!important; padding:0!important; margin:0!important;
+  border:0!important; border-radius:12px!important; background:#ff3b30!important;
+  display:flex!important; align-items:center!important; justify-content:center!important;
+  visibility:hidden!important; opacity:0!important; pointer-events:none!important;
+}
+#serviceList .serviceRow.swipeOpen .swipeDelete,#employeeList .serviceRow.swipeOpen .swipeDelete{
+  visibility:visible!important; opacity:1!important; pointer-events:auto!important;
+}
+#serviceList .serviceRow .swipeDeleteIcon,#employeeList .serviceRow .swipeDeleteIcon{
+  display:grid!important; place-items:center!important; width:40px!important; height:40px!important;
+  margin:0!important; padding:0!important; border:0!important; border-radius:11px!important;
+  background:#ff3b30!important; color:#fff!important; font-family:-apple-system,BlinkMacSystemFont,"Helvetica Neue",Arial,sans-serif!important;
+  font-size:28px!important; font-weight:300!important; line-height:40px!important; box-shadow:none!important;
+}
+#serviceList .serviceRow::before,#serviceList .serviceRow::after,#serviceList .swipeWrap::before,#serviceList .swipeWrap::after,#serviceList .swipeContent::before,#serviceList .swipeContent::after,
+#employeeList .serviceRow::before,#employeeList .serviceRow::after,#employeeList .swipeWrap::before,#employeeList .swipeWrap::after,#employeeList .swipeContent::before,#employeeList .swipeContent::after{
+  content:none!important; display:none!important; width:0!important; height:0!important; background:none!important;
+}
+#serviceList .serviceRow + .serviceRow,#employeeList .serviceRow + .serviceRow{margin-top:3px!important}
+.addBar{display:flex!important;flex-direction:column!important;align-items:stretch!important;gap:8px!important}
+.saveManage{width:100%!important;min-height:52px!important}

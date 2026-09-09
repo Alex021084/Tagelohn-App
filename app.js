@@ -235,106 +235,51 @@ function archiveKey(type,contractor,project=''){
 // iPhone-/Touch-freundliches Wischen zum Löschen.
 // Die rote Löschen-Aktion erscheint ERST nach einem echten Wisch nach links.
 // Es werden keine permanent sichtbaren Löschen-Buttons unter den Einträgen angezeigt.
+let activeSwipeClose=null;
 function enableSwipeDelete(target,onDelete){
   if(!target)return;
   target.classList.add('swipeTarget');
-  const wrap=document.createElement('div');
-  wrap.className='swipeWrap';
-  const content=document.createElement('div');
-  content.className='swipeContent';
-  while(target.firstChild) content.append(target.firstChild);
+  const wrap=document.createElement('div'); wrap.className='swipeWrap';
+  const content=document.createElement('div'); content.className='swipeContent';
+  while(target.firstChild) content.appendChild(target.firstChild);
   const del=document.createElement('button');
-  del.type='button';
-  del.className='swipeDelete';
-  del.innerHTML=`<span class="swipeDeleteIcon" aria-hidden="true">×</span>`;
-  del.setAttribute('aria-label','Löschen');
-  wrap.append(content,del);
-  target.append(wrap);
+  del.type='button'; del.className='swipeDelete'; del.setAttribute('aria-label','Löschen');
+  del.innerHTML='<span class="swipeDeleteIcon" aria-hidden="true">×</span>';
+  wrap.append(content,del); target.appendChild(wrap);
 
-  const max=96;
-  let startX=0,startY=0,currentX=0,dragging=false,horizontal=false,moved=false,suppressClick=false;
-
-  const setX=x=>{
-    currentX=Math.max(-max,Math.min(0,x));
-    content.style.transform=`translate3d(${currentX}px,0,0)`;
-  };
-  const close=()=>{setX(0);target.classList.remove('swipeOpen');};
-  const open=()=>{setX(-max);target.classList.add('swipeOpen');};
+  const max=64;
+  let startX=0,startY=0,startOffset=0,currentX=0,dragging=false,horizontal=false,moved=false,suppressClick=false;
+  const setX=x=>{currentX=Math.max(-max,Math.min(0,x));content.style.transform=`translate3d(${currentX}px,0,0)`};
+  const close=()=>{setX(0);target.classList.remove('swipeOpen');if(activeSwipeClose===close)activeSwipeClose=null};
+  const open=()=>{if(activeSwipeClose&&activeSwipeClose!==close)activeSwipeClose();setX(-max);target.classList.add('swipeOpen');activeSwipeClose=close};
 
   content.addEventListener('touchstart',e=>{
-    if(!e.touches||!e.touches[0])return;
-    const t=e.touches[0];
-    startX=t.clientX; startY=t.clientY;
-    dragging=true; horizontal=false; moved=false;
+    if(activeSwipeClose&&activeSwipeClose!==close)activeSwipeClose();
+    const t=e.touches?.[0]; if(!t)return;
+    startX=t.clientX; startY=t.clientY; startOffset=currentX; dragging=true; horizontal=false; moved=false;
   },{passive:true});
-
   content.addEventListener('touchmove',e=>{
-    if(!dragging||!e.touches||!e.touches[0])return;
-    const t=e.touches[0];
-    const dx=t.clientX-startX, dy=t.clientY-startY;
+    if(!dragging)return; const t=e.touches?.[0]; if(!t)return;
+    const dx=t.clientX-startX,dy=t.clientY-startY;
     if(!horizontal){
-      if(Math.abs(dx)<7 && Math.abs(dy)<7)return;
-      if(Math.abs(dy)>Math.abs(dx)+5){dragging=false;return;}
+      if(Math.abs(dx)<6&&Math.abs(dy)<6)return;
+      if(Math.abs(dy)>Math.abs(dx)){dragging=false;return;}
       horizontal=true;
     }
-    if(horizontal){
-      e.preventDefault();
-      moved=true;
-      // Beim Wischen wird immer relativ zur aktuellen Startposition gerechnet.
-      const base=target.classList.contains('swipeOpen') ? -max : 0;
-      setX(Math.max(-max,Math.min(0,base+dx)));
-    }
+    if(horizontal){e.preventDefault();moved=true;setX(startOffset+dx)}
   },{passive:false});
-
   const finish=()=>{
-    if(!dragging)return;
-    dragging=false;
-    if(horizontal&&moved){
-      suppressClick=true;
-      if(currentX < -max/2) open(); else close();
-      window.setTimeout(()=>{suppressClick=false;},350);
-    }
+    if(!dragging)return; dragging=false;
+    if(horizontal&&moved){suppressClick=true;currentX < -max/2 ? open() : close();setTimeout(()=>suppressClick=false,300)}
   };
   content.addEventListener('touchend',finish,{passive:true});
-  content.addEventListener('touchcancel',()=>{dragging=false;if(currentX < -max/2)open();else close();},{passive:true});
-
-  // Desktop: zusätzlich Maus/Pointer unterstützen.
-  let pStartX=0,pStartY=0,pDragging=false,pHorizontal=false,pMoved=false;
-  content.addEventListener('pointerdown',e=>{
-    if(e.pointerType==='touch')return;
-    if(e.button!==0)return;
-    pStartX=e.clientX;pStartY=e.clientY;pDragging=true;pHorizontal=false;pMoved=false;
-    content.setPointerCapture?.(e.pointerId);
-  });
-  content.addEventListener('pointermove',e=>{
-    if(!pDragging)return;
-    const dx=e.clientX-pStartX,dy=e.clientY-pStartY;
-    if(!pHorizontal){
-      if(Math.abs(dx)<7&&Math.abs(dy)<7)return;
-      if(Math.abs(dy)>Math.abs(dx)+5){pDragging=false;return;}
-      pHorizontal=true;
-    }
-    if(pHorizontal){pMoved=true;setX(Math.max(-max,Math.min(0,dx)));}
-  });
-  content.addEventListener('pointerup',e=>{
-    if(!pDragging)return;pDragging=false;
-    if(pHorizontal&&pMoved){suppressClick=true;if(currentX<-max/2)open();else close();window.setTimeout(()=>suppressClick=false,350);}
-  });
+  content.addEventListener('touchcancel',()=>{dragging=false;currentX<-max/2?open():close()},{passive:true});
 
   content.addEventListener('click',e=>{
-    if(suppressClick){e.preventDefault();e.stopPropagation();suppressClick=false;return;}
-    if(target.classList.contains('swipeOpen') && !e.target.closest('.swipeDelete')){
-      // Ein Tipp auf den Inhalt schließt einen geöffneten Löschbereich.
-      close();
-      e.preventDefault();
-      e.stopPropagation();
-    }
+    if(suppressClick){e.preventDefault();e.stopPropagation();suppressClick=false;return}
+    if(target.classList.contains('swipeOpen')){close();e.preventDefault();e.stopPropagation()}
   },true);
-
-  del.addEventListener('click',e=>{
-    e.stopPropagation();
-    if(confirm('Wirklich löschen?'))onDelete();else close();
-  });
+  del.addEventListener('click',e=>{e.preventDefault();e.stopPropagation();if(confirm('Wirklich löschen?')){close();onDelete()}});
   target._closeSwipe=close;
   return {close};
 }

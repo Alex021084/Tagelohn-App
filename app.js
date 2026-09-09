@@ -527,7 +527,7 @@ $('new').onclick=$('new2').onclick=()=>{editingReportIndex=null;fill({});show('e
 $('addEmp').onclick=()=>addEmp();$('addWork').onclick=()=>item('works');$('addMat').onclick=()=>item('materials');
 $('archiveBtn').onclick=()=>{render();show('archive')};$('homeBtn').onclick=()=>show('home');$('customersBtn').onclick=openCustomers;$('homeFromCustomers').onclick=()=>show('home');
 $('manageCustomers').onclick=openCustomers;$('addCustomer').onclick=addCustomer;$('contractorSelect').onchange=customerChanged;$('projectSelect').onchange=projectChanged;$('projectCustomerSelect').onchange=renderProjectList;$('addProject').onclick=addProject;$('servicesBtn').onclick=openServices;$('homeFromServices').onclick=()=>show('home');$('addService').onclick=addService;$('employeesBtn').onclick=openEmployees;$('homeFromEmployees').onclick=()=>show('home');$('addEmployee').onclick=addEmployee;
-$('save').onclick=()=>{reports.unshift(collect());save();render();show('archive')};$('pdf').onclick=createPdf;
+$('save').onclick=()=>{reports.unshift(collect());save();render();show('archive')};$('pdf').onclick=()=>createPdf({askLocation:true});
 document.querySelectorAll('nav button').forEach(b=>b.onclick=()=>show(b.dataset.s));
 $('date').addEventListener('change',syncDateDisplay);
 syncDateDisplay();

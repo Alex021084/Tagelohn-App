@@ -361,7 +361,9 @@ function cleanContractorName(value){
 }
 function pdfFilename(data){
   const customer=cleanFilenamePart(cleanContractorName(data.contractor))||'Auftraggeber';
-  const date=shortDate(data.date).slice(0,8); // TT.MM.JJ
+  const fullDate=shortDate(data.date);
+  const dateParts=fullDate.split('.');
+  const date=dateParts.length===3 ? `${dateParts[0]}.${dateParts[1]}.${dateParts[2].slice(-2)}` : fullDate; // TT.MM.JJ
   const project=cleanFilenamePart(data.project)||'Bauvorhaben';
   return `${customer} - ${date} - ${project}.pdf`;
 }

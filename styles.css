@@ -248,3 +248,6 @@ body { touch-action: manipulation; }
 .dateInputWrap{position:relative;width:100%;margin-top:5px}
 #dateDisplay{margin-top:0;width:100%;height:44px;font-size:16px!important;background:#fafafa;cursor:pointer}
 .nativeDatePicker{position:absolute!important;inset:0!important;width:100%!important;height:100%!important;margin:0!important;padding:0!important;border:0!important;opacity:0!important;cursor:pointer!important;z-index:2!important;-webkit-appearance:none!important;appearance:none!important}
+
+/* FIX10: Anfang und Ende nur in 15-Minuten-Schritten */
+.employee select.timeSelect{width:100%;min-height:44px;padding:11px 12px;border:1px solid #d5d5da;border-radius:10px;background:#fafafa;color:#111;font:inherit;}

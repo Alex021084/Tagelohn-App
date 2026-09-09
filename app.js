@@ -147,22 +147,24 @@ function renderEmployees(){
   });
   if(!employees.length)l.innerHTML='<div class="empty">Noch keine Mitarbeiter angelegt.</div>';
 }
-function addEmployee(){
-  const value=$('employeeName').value.trim();
-  if(!value){alert('Bitte einen Namen eingeben.');return}
-  if(employees.some(e=>e.toLowerCase()===value.toLowerCase())){alert('Diesen Mitarbeiter gibt es bereits.');return}
-  employees.push(value);persistEmployees();$('employeeName').value='';renderEmployees();
+function quarterTime(value=''){
+  if(!value) return '';
+  const m=/^(\d{1,2}):(\d{2})$/.exec(value);
+  if(!m) return '';
+  let h=Math.min(23,Math.max(0,Number(m[1]))), min=Math.min(59,Math.max(0,Number(m[2])));
+  let total=h*60+min;
+  total=Math.round(total/15)*15;
+  if(total>=1440) total=1425;
+  return `${String(Math.floor(total/60)).padStart(2,'0')}:${String(total%60).padStart(2,'0')}`;
 }
-function employeeOptions(selected=''){
-  const current=String(selected||'');
-  const options=employees.map(n=>`<option value="${esc(n)}"${n===current?' selected':''}>${esc(n)}</option>`).join('');
-  return '<option value="">— Mitarbeiter auswählen —</option>'+options;
-}
-
-function serviceOptions(selected=''){
-  const current=String(selected||'');
-  const options=services.map(s=>`<option value="${esc(s)}"${s===current?' selected':''}>${esc(s)}</option>`).join('');
-  return '<option value="">— Leistung auswählen —</option>'+options;
+function timeOptions(value=''){
+  const selected=quarterTime(value);
+  let html='<option value="">—</option>';
+  for(let h=0;h<24;h++) for(const m of [0,15,30,45]){
+    const v=`${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}`;
+    html+=`<option value="${v}"${v===selected?' selected':''}>${v}</option>`;
+  }
+  return html;
 }
 function addEmp(e={}){
   const selectedService=e.service||e.activity||'';
@@ -171,9 +173,9 @@ function addEmp(e={}){
   <label>Name des Mitarbeiters<select class="name" aria-label="Mitarbeiter auswählen">${employeeOptions(e.name||'')}</select></label>
   <div class="grid"><label>Leistung<select class="service" aria-label="Leistung für Mitarbeiter auswählen">${serviceOptions(selectedService)}</select></label>
   <label>Stunden<input class="hours" type="number" step=".25" value="${e.hours??0}"></label></div>
-  <div class="grid grid3"><label>Anfang<input class="start" type="time" step="900" value="${e.start||''}"></label><label>Ende<input class="end" type="time" step="900" value="${e.end||''}"></label><label>Pause<input class="pause" type="number" value="${e.pause??0}"></label></div>`;
+  <div class="grid grid3"><label>Anfang<select class="start timeSelect" aria-label="Anfangszeit auswählen">${timeOptions(e.start||'')}</select></label><label>Ende<select class="end timeSelect" aria-label="Endzeit auswählen">${timeOptions(e.end||'')}</select></label><label>Pause<input class="pause" type="number" value="${e.pause??0}"></label></div>`;
   d.querySelector('.del').onclick=()=>d.remove();
-  ['start','end','pause'].forEach(c=>d.querySelector('.'+c).oninput=()=>calc(d));
+  ['start','end','pause'].forEach(c=>d.querySelector('.'+c).onchange=()=>calc(d));
   $('employees').append(d);
 }
 function calc(d){let s=d.querySelector('.start').value,e=d.querySelector('.end').value,p=+(d.querySelector('.pause').value||0);if(s&&e){let a=s.split(':').map(Number),b=e.split(':').map(Number),m=b[0]*60+b[1]-a[0]*60-a[1]-p;if(m>=0)d.querySelector('.hours').value=(m/60).toFixed(2)}}

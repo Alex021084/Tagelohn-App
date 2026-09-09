@@ -30,7 +30,7 @@
 <label>Auftraggeber<select id="contractorSelect"></select></label>
 <button id="manageCustomers" class="titleBtn">＋ Kunden verwalten</button>
 <label>Anschrift<textarea id="address"></textarea></label>
-<label>Bauvorhaben<textarea id="project"></textarea></label></div>
+<label>Bauvorhaben<select id="projectSelect" aria-label="Bauvorhaben auswählen"></select><textarea id="project" class="projectManual" placeholder="Bauvorhaben eingeben..."></textarea></label></div>
 <div class="panel"><div class="title"><h2>Mitarbeiter / Leistungen</h2><button id="addEmp">＋ Hinzufügen</button></div><div id="employees"></div></div>
 <div class="panel"><h2>Ausgeführte Arbeiten</h2><div id="works"></div><button id="addWork">＋ Eintrag hinzufügen</button></div>
 <div class="panel"><h2>Material / sonstige Leistungen</h2><div id="materials"></div><button id="addMat">＋ Eintrag hinzufügen</button></div>
@@ -62,6 +62,7 @@
 <label>Kundenname<input id="customerName" placeholder="z. B. Muster GmbH"></label>
 <label>Anschrift<textarea id="customerAddress" placeholder="Straße Hausnummer&#10;PLZ Ort"></textarea></label>
 <button id="addCustomer" class="primary">Kunden speichern</button></div>
+<div class="panel"><h2>Bauvorhaben zuordnen</h2><p class="hint">Wähle einen Auftraggeber und füge ihm mehrere Bauvorhaben hinzu. Diese stehen beim neuen Tagelohn anschließend zur Auswahl.</p><label>Auftraggeber<select id="projectCustomerSelect"></select></label><div class="addBar"><input id="projectName" placeholder="Neues Bauvorhaben..." aria-label="Neues Bauvorhaben"><button id="addProject" class="primary saveManage">Speichern</button></div><div id="projectList"></div></div>
 <div id="customerList"></div>
 </section>
 
@@ -69,4 +70,4 @@
 </main>
 <nav><button data-s="home">⌂<small>Start</small></button><button data-s="archive">▤<small>Nachweise</small></button><button data-s="editor">＋<small>Neu</small></button></nav>
 <script src="https://unpkg.com/pdf-lib@1.17.1/dist/pdf-lib.min.js"></script>
-<script src="app.js?v=20260909-quarterhours-pause-fix12"></script></body></html>
+<script src="app.js?v=20260909-customer-projects-fix13"></script></body></html>

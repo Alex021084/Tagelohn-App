@@ -251,3 +251,10 @@ body { touch-action: manipulation; }
 
 /* Uhrzeiten: nur Viertelstunden (00/15/30/45), ohne Safari-Zeitpicker */
 .timeSelect{width:100%;margin-top:5px;padding:11px;border:1px solid #d5d5da;border-radius:10px;font:inherit;background:#fafafa;min-height:45px;}
+.projectManual{display:block}
+#projectSelect{width:100%;margin-top:5px;padding:11px;border:1px solid #d5d5da;border-radius:10px;font:inherit;background:#fafafa;min-height:45px}
+#projectList{margin-top:10px}
+.projectManageRow{display:flex;align-items:center;gap:10px;padding:10px 0;border-top:1px solid #eee}
+.projectManageRow span{flex:1;font-size:15px}
+.projectManageRow button{width:38px;height:38px;border:0;border-radius:10px;background:#fce8e8;color:#d00;font-size:24px;line-height:1}
+.hint{color:#777}

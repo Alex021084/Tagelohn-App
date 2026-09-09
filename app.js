@@ -3,6 +3,10 @@ let reports=JSON.parse(localStorage.tagelohn||'[]');
 let editingReportIndex=null;
 const defaultCustomers=[{id:'dreyer',name:'Dreyer Hochbau GmbH & Co. KG',address:'Mühlenberg 12\n27404 Elsdorf'}];
 let customers=JSON.parse(localStorage.tagelohnCustomers||'null')||defaultCustomers;
+if(!Array.isArray(customers)) customers=[...defaultCustomers];
+customers=customers.map(c=>({...c,projects:Array.isArray(c.projects)?c.projects:[]}));
+// Bereits verwendete Bauvorhaben aus vorhandenen Nachweisen übernehmen.
+reports.forEach(r=>{const c=customers.find(x=>x.name===r.contractor);const project=String(r.project||'').trim();if(c&&project&&!c.projects.some(p=>p.toLowerCase()===project.toLowerCase()))c.projects.push(project);});
 let services=JSON.parse(localStorage.tagelohnServices||'null');
 let employees=JSON.parse(localStorage.tagelohnEmployees||'null');
 const defaultServices=[
@@ -83,6 +87,23 @@ function renderCustomerSelect(selectedName=''){
   s.innerHTML='<option value="">— Kunde auswählen —</option>'+customers.map(c=>`<option value="${esc(c.id)}">${esc(c.name)}</option>`).join('')+'<option value="__manual__">Manuell / anderer Auftraggeber</option>';
   const match=customers.find(c=>c.name===selectedName);
   s.value=match?match.id:(selectedName?'__manual__':'');
+  customerChanged();
+}
+function renderProjectSelect(selectedProject=''){
+  const select=$('projectSelect'), manual=$('project');
+  if(!select||!manual)return;
+  const id=$('contractorSelect')?.value;
+  const c=customers.find(x=>x.id===id);
+  const projects=Array.isArray(c?.projects)?c.projects:[];
+  select.innerHTML='<option value="">— Bauvorhaben auswählen —</option>'+projects.map(p=>`<option value="${esc(p)}">${esc(p)}</option>`).join('')+'<option value="__manual__">＋ Neues Bauvorhaben eingeben</option>';
+  if(selectedProject&&projects.includes(selectedProject)){select.value=selectedProject;manual.value=selectedProject;manual.style.display='none';}
+  else if(selectedProject){select.value='__manual__';manual.value=selectedProject;manual.style.display='block';}
+  else {select.value='';manual.value='';manual.style.display=projects.length?'none':'block';}
+}
+function projectChanged(){
+  const v=$('projectSelect').value;
+  if(v==='__manual__'){$('project').style.display='block';$('project').focus();return;}
+  $('project').value=v; $('project').style.display='none';
 }
 function customerChanged(){
   const id=$('contractorSelect').value;
@@ -90,26 +111,56 @@ function customerChanged(){
   if(id==='__manual__'){
     const current=$('contractorSelect').dataset.manualName||'';
     $('contractorSelect').dataset.manualName=current;
+    renderProjectSelect($('project')?.value||'');
     return;
   }
   const c=customers.find(x=>x.id===id); if(!c)return;
   $('contractorSelect').dataset.manualName=c.name;
   $('address').value=c.address;
+  renderProjectSelect('');
 }
 function contractorName(){
   const id=$('contractorSelect').value;
   if(id==='__manual__')return $('contractorSelect').dataset.manualName||'';
   const c=customers.find(x=>x.id===id); return c?.name||'';
 }
-function openCustomers(){renderCustomers();show('customers')}
+function openCustomers(){renderCustomers();renderProjectCustomerSelect();show('customers')}
+function renderProjectCustomerSelect(selectedId=''){
+  const s=$('projectCustomerSelect'); if(!s)return;
+  s.innerHTML=customers.map(c=>`<option value="${esc(c.id)}">${esc(c.name)}</option>`).join('');
+  if(selectedId)s.value=selectedId;
+  renderProjectList();
+}
+function renderProjectList(){
+  const l=$('projectList'); if(!l)return; l.innerHTML='';
+  const id=$('projectCustomerSelect').value, c=customers.find(x=>x.id===id);
+  if(!c){return;}
+  const projects=c.projects||[];
+  if(!projects.length){l.innerHTML='<div class="empty">Noch keine Bauvorhaben angelegt.</div>';return;}
+  projects.forEach((name,i)=>{
+    const d=document.createElement('div'); d.className='projectManageRow';
+    d.innerHTML=`<span>${esc(name)}</span><button type="button" aria-label="Bauvorhaben löschen">×</button>`;
+    d.querySelector('button').onclick=()=>{if(confirm('Bauvorhaben wirklich löschen?')){c.projects.splice(i,1);persistCustomers();renderProjectList();renderProjectSelect($('project').value||'');}};
+    l.append(d);
+  });
+}
+function addProject(){
+  const id=$('projectCustomerSelect').value, value=$('projectName').value.trim(), c=customers.find(x=>x.id===id);
+  if(!c){alert('Bitte zuerst einen Auftraggeber auswählen.');return}
+  if(!value){alert('Bitte ein Bauvorhaben eingeben.');return}
+  c.projects=c.projects||[];
+  if(c.projects.some(p=>p.toLowerCase()===value.toLowerCase())){alert('Dieses Bauvorhaben gibt es bereits.');return}
+  c.projects.push(value);persistCustomers();$('projectName').value='';renderProjectList();
+}
 function renderCustomers(){
   const l=$('customerList');
   l.innerHTML='';
   if(!customers.length){l.innerHTML='<div class="panel">Noch keine Kunden angelegt.</div>';return}
   customers.forEach(c=>{
     const d=document.createElement('div');d.className='archive';
-    d.innerHTML=`<b>${esc(c.name)}</b><small>${esc(c.address).replaceAll('\n','<br>')}</small><button class="del customerDel">Löschen</button>`;
-    d.querySelector('.customerDel').onclick=()=>{if(confirm('Kunden wirklich löschen?')){customers=customers.filter(x=>x.id!==c.id);persistCustomers();renderCustomers();renderCustomerSelect($('contractorSelect').dataset.manualName||'')}};
+    const projects=(c.projects||[]);
+    d.innerHTML=`<b>${esc(c.name)}</b><small>${esc(c.address).replaceAll('\n','<br>')}</small><small>${projects.length} ${projects.length===1?'Bauvorhaben':'Bauvorhaben'}</small><button class="del customerDel">Löschen</button>`;
+    d.querySelector('.customerDel').onclick=()=>{if(confirm('Kunden wirklich löschen?')){customers=customers.filter(x=>x.id!==c.id);persistCustomers();renderCustomers();renderProjectCustomerSelect();renderCustomerSelect($('contractorSelect').dataset.manualName||'')}};
     l.append(d);
   });
 }
@@ -117,10 +168,10 @@ function addCustomer(){
   const name=$('customerName').value.trim(),address=$('customerAddress').value.trim();
   if(!name||!address){alert('Bitte Kundenname und Anschrift eingeben.');return}
   const existing=customers.find(c=>c.name.toLowerCase()===name.toLowerCase());
-  if(existing){existing.address=address}else customers.push({id:'c_'+Date.now(),name,address});
+  if(existing){existing.address=address}else customers.push({id:'c_'+Date.now(),name,address,projects:[]});
   persistCustomers();
   $('customerName').value='';$('customerAddress').value='';
-  renderCustomers();renderCustomerSelect(name);
+  renderCustomers();renderCustomerSelect(name);renderProjectCustomerSelect(existing?.id||customers.find(c=>c.name===name)?.id||'');
   $('contractorSelect').dataset.manualName=name;
   $('address').value=address;
   alert('Kunde gespeichert.');
@@ -243,6 +294,7 @@ function fill(r){
   $('contractorSelect').dataset.manualName=r.contractor||'';
   $('address').value=r.address||'Mühlenberg 12\n27404 Elsdorf';
   $('project').value=r.project||'Rohrleitungsarbeiten Betriebsgelände Elsdorf';
+  renderProjectSelect(r.project||'Rohrleitungsarbeiten Betriebsgelände Elsdorf');
   $('client').value=r.client||'';
   $('employees').innerHTML='';(r.employees||[]).forEach(addEmp);
   $('works').innerHTML='';(r.works||[]).forEach(v=>item('works',v));
@@ -474,7 +526,7 @@ async function createPdf(options={}){
 $('new').onclick=$('new2').onclick=()=>{editingReportIndex=null;fill({});show('editor')};
 $('addEmp').onclick=()=>addEmp();$('addWork').onclick=()=>item('works');$('addMat').onclick=()=>item('materials');
 $('archiveBtn').onclick=()=>{render();show('archive')};$('homeBtn').onclick=()=>show('home');$('customersBtn').onclick=openCustomers;$('homeFromCustomers').onclick=()=>show('home');
-$('manageCustomers').onclick=openCustomers;$('addCustomer').onclick=addCustomer;$('contractorSelect').onchange=customerChanged;$('servicesBtn').onclick=openServices;$('homeFromServices').onclick=()=>show('home');$('addService').onclick=addService;$('employeesBtn').onclick=openEmployees;$('homeFromEmployees').onclick=()=>show('home');$('addEmployee').onclick=addEmployee;
+$('manageCustomers').onclick=openCustomers;$('addCustomer').onclick=addCustomer;$('contractorSelect').onchange=customerChanged;$('projectSelect').onchange=projectChanged;$('projectCustomerSelect').onchange=renderProjectList;$('addProject').onclick=addProject;$('servicesBtn').onclick=openServices;$('homeFromServices').onclick=()=>show('home');$('addService').onclick=addService;$('employeesBtn').onclick=openEmployees;$('homeFromEmployees').onclick=()=>show('home');$('addEmployee').onclick=addEmployee;
 $('save').onclick=()=>{reports.unshift(collect());save();render();show('archive')};$('pdf').onclick=createPdf;
 document.querySelectorAll('nav button').forEach(b=>b.onclick=()=>show(b.dataset.s));
 $('date').addEventListener('change',syncDateDisplay);
